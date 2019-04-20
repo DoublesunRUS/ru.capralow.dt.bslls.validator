@@ -12,8 +12,7 @@ git:
   depth: false
 
 env:
-  - PLUGIN_VERSION="0.5.0"
-  - SONAR_PROJECT_KEY="DoublesunRUS_ru.capralow.dt.bslls.validator"
+  - PLUGIN_VERSION="0.5.0" SONAR_PROJECT_KEY="DoublesunRUS_ru.capralow.dt.bslls.validator"
 
 script: 
 - mvn clean test verify -f build/pom.xml -s build/settings.xml 
