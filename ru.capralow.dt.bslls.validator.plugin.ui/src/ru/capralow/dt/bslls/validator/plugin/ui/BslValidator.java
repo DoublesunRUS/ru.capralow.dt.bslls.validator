@@ -4,6 +4,7 @@ import java.util.List;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
+import org.eclipse.xtext.EcoreUtil2;
 import org.eclipse.xtext.nodemodel.ICompositeNode;
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils;
 import org.github._1c_syntax.bsl.languageserver.context.ServerContext;
@@ -11,7 +12,9 @@ import org.github._1c_syntax.bsl.languageserver.providers.DiagnosticProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com._1c.g5.v8.dt.bsl.model.Function;
 import com._1c.g5.v8.dt.bsl.model.Module;
+import com._1c.g5.v8.dt.bsl.model.Procedure;
 import com._1c.g5.v8.dt.bsl.validation.CustomValidationMessageAcceptor;
 import com._1c.g5.v8.dt.bsl.validation.IExternalBslValidator;
 import org.eclipse.xtext.resource.EObjectAtOffsetHelper;
@@ -20,7 +23,7 @@ import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 
 public class BslValidator implements IExternalBslValidator {
-	private static final Logger LOGGER = LoggerFactory.getLogger(BslValidator.class.getSimpleName());
+	private static final Logger LOGGER = LoggerFactory.getLogger(BslValidator.class);
 
 	private DiagnosticProvider diagnosticProvider;
 	private ServerContext bslServerContext;
@@ -34,28 +37,28 @@ public class BslValidator implements IExternalBslValidator {
 
 	@Override
 	public boolean needValidation(EObject object) {
-		if (!(object instanceof Module))
-			return false;
-
-		ICompositeNode node = NodeModelUtils.findActualNodeFor(object);
-		String moduleText = node.getText();
-
-		bslServerContext.addDocument(((Module) object).getUniqueName(), moduleText);
-
-		return true;
+		return object instanceof Procedure || object instanceof Function || object instanceof Module;
 	}
 
 	@Override
 	public void validate(EObject object, CustomValidationMessageAcceptor messageAcceptor) {
-		Module module = (Module) object;
+		Module module;
+		if (object instanceof Module)
+			module = (Module) object;
+		else
+			module = EcoreUtil2.getContainerOfType(object, Module.class);
+		String objectUri = module.getUniqueName();
+		// FIXME: Повторная расширенная проверка не приводит к перепроверке
+		if (!(object instanceof Module) && bslServerContext.getDocument(objectUri) != null)
+			return;
 
-		ICompositeNode node = NodeModelUtils.findActualNodeFor(object);
-		String moduleText = node.getText();
-		Document doc = new Document(moduleText);
+		ICompositeNode node = NodeModelUtils.findActualNodeFor(module);
+		String objectText = node.getText();
 
-		XtextResource resource = (XtextResource) module.eResource();
-		String moduleName = module.getUniqueName();
-		List<Diagnostic> diagnostics = diagnosticProvider.computeDiagnostics(bslServerContext.getDocument(moduleName));
+		bslServerContext.addDocument(objectUri, objectText);
+		Document doc = new Document(objectText);
+
+		List<Diagnostic> diagnostics = diagnosticProvider.computeDiagnostics(bslServerContext.getDocument(objectUri));
 		for (Diagnostic diagnostic : diagnostics) {
 			Integer offset = 0;
 			Integer length = 0;
@@ -70,18 +73,15 @@ public class BslValidator implements IExternalBslValidator {
 				LOGGER.error("Не удалось определить объект, к которому относится диагностическое сообщение.", e);
 
 			}
-			EObject diagnosticObject = new EObjectAtOffsetHelper().resolveContainedElementAt(resource, offset);
+			EObject diagnosticObject = new EObjectAtOffsetHelper()
+					.resolveContainedElementAt((XtextResource) object.eResource(), offset);
+			if (diagnosticObject == null)
+				diagnosticObject = object;
 
 			if (diagnostic.getSeverity().equals(DiagnosticSeverity.Error))
 				messageAcceptor.acceptError(diagnostic.getMessage(), diagnosticObject, offset, length, "", "");
 
-			else if (diagnostic.getSeverity().equals(DiagnosticSeverity.Warning))
-				messageAcceptor.acceptWarning(diagnostic.getMessage(), diagnosticObject, offset, length, "", "");
-
-			else if (diagnostic.getSeverity().equals(DiagnosticSeverity.Information))
-				messageAcceptor.acceptWarning(diagnostic.getMessage(), diagnosticObject, offset, length, "", "");
-
-			else if (diagnostic.getSeverity().equals(DiagnosticSeverity.Hint))
+			else
 				messageAcceptor.acceptWarning(diagnostic.getMessage(), diagnosticObject, offset, length, "", "");
 		}
 
