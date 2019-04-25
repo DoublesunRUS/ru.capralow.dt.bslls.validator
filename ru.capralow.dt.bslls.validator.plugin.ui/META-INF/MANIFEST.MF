@@ -6,7 +6,7 @@ Bundle-Version: 0.5.0.qualifier
 Bundle-Activator: ru.capralow.dt.bslls.validator.plugin.ui.Activator
 Bundle-Vendor: Капралов Александр Александрович
 Require-Bundle: org.eclipse.core.runtime,
- com._1c.g5.v8.dt.product.application;bundle-version="1.10.2"
+ com._1c.g5.v8.dt.product.application;bundle-version="1.10.2.53"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Automatic-Module-Name: dt.validator.bsl-language-server.plugin
 Bundle-ActivationPolicy: lazy
