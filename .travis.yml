@@ -33,6 +33,7 @@ after_success:
 - curl -l -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/$PLUGIN_VERSION/ -v -Q "-RMD plugins"
 - curl -l -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/ -v -Q "-RMD $PLUGIN_VERSION"
 - find repository/target/repository/ -type f | xargs -L 1 bash -c 'curl --ftp-create-dirs -T $1 -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/$PLUGIN_VERSION/${1##repository/target/repository/}' \;
+- find repository/index.html -type f | xargs -L 1 bash -c 'curl --ftp-create-dirs -T $1 -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/$PLUGIN_VERSION/${1##repository/}' \;
 
 - curl -l -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/ | xargs -I{} -- curl -v -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/ -Q "-DELE {}"
 - curl -l -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/features/ | xargs -I{} -- curl -v -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/features/ -Q "-DELE {}"
@@ -41,3 +42,12 @@ after_success:
 - curl -l -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/ -v -Q "-RMD plugins"
 - curl -l -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/ -v -Q "-RMD latest"
 - find repository/target/repository/ -type f | xargs -L 1 bash -c 'curl --ftp-create-dirs -T $1 -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/${1##repository/target/repository/}' \;
+- find repository/index.html -type f | xargs -L 1 bash -c 'curl --ftp-create-dirs -T $1 -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/${1##repository/}' \;
+
+deploy:
+  provider: releases
+  api_key: $GITHUB_OAUTH_TOKEN
+  file: repository/target/repository-$PLUGIN_VERSION-SNAPSHOT.zip
+  skip_cleanup: true
+  on:
+    tags: true
