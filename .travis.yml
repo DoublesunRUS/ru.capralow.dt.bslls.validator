@@ -12,7 +12,7 @@ git:
   depth: false
 
 env:
-  - PLUGIN_VERSION="0.5.0" SONAR_PROJECT_KEY="DoublesunRUS_ru.capralow.dt.bslls.validator"
+  - PLUGIN_VERSION="0.5.1" SONAR_PROJECT_KEY="DoublesunRUS_ru.capralow.dt.bslls.validator"
 
 script: 
 - mvn clean test verify -f build/pom.xml -s build/settings.xml 
@@ -22,8 +22,6 @@ cache:
   directories:
     - '$HOME/.m2/repository'
     - '$HOME/.sonar/cache'
-
-language: node_js
 
 after_success:
 - curl -l -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/$PLUGIN_VERSION/ | xargs -I{} -- curl -v -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/$PLUGIN_VERSION/ -Q "-DELE {}"
@@ -35,14 +33,16 @@ after_success:
 - find repository/target/repository/ -type f | xargs -L 1 bash -c 'curl --ftp-create-dirs -T $1 -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/$PLUGIN_VERSION/${1##repository/target/repository/}' \;
 - find repository/index.html -type f | xargs -L 1 bash -c 'curl --ftp-create-dirs -T $1 -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/$PLUGIN_VERSION/${1##repository/}' \;
 
-- curl -l -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/ | xargs -I{} -- curl -v -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/ -Q "-DELE {}"
-- curl -l -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/features/ | xargs -I{} -- curl -v -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/features/ -Q "-DELE {}"
-- curl -l -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/plugins/ | xargs -I{} -- curl -v -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/plugins/ -Q "-DELE {}"
-- curl -l -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/ -v -Q "-RMD features"
-- curl -l -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/ -v -Q "-RMD plugins"
-- curl -l -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/ -v -Q "-RMD latest"
-- find repository/target/repository/ -type f | xargs -L 1 bash -c 'curl --ftp-create-dirs -T $1 -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/${1##repository/target/repository/}' \;
-- find repository/index.html -type f | xargs -L 1 bash -c 'curl --ftp-create-dirs -T $1 -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/${1##repository/}' \;
+- if (!$TRAVIS_TAG.isEmpty()) {
+    curl -l -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/ | xargs -I{} -- curl -v -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/ -Q "-DELE {}"
+    curl -l -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/features/ | xargs -I{} -- curl -v -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/features/ -Q "-DELE {}"
+    curl -l -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/plugins/ | xargs -I{} -- curl -v -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/plugins/ -Q "-DELE {}"
+    curl -l -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/ -v -Q "-RMD features"
+    curl -l -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/ -v -Q "-RMD plugins"
+    curl -l -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/ -v -Q "-RMD latest"
+    find repository/target/repository/ -type f | xargs -L 1 bash -c 'curl --ftp-create-dirs -T $1 -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/${1##repository/target/repository/}' \;
+    find repository/index.html -type f | xargs -L 1 bash -c 'curl --ftp-create-dirs -T $1 -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/${1##repository/}' \;
+}
 
 deploy:
   provider: releases

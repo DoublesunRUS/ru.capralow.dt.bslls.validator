@@ -6,12 +6,13 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.lsp4j.Diagnostic;
-import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.xtext.nodemodel.ICompositeNode;
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils;
 import org.eclipse.xtext.resource.EObjectAtOffsetHelper;
 import org.eclipse.xtext.resource.XtextResource;
 import org.github._1c_syntax.bsl.languageserver.context.ServerContext;
+import org.github._1c_syntax.bsl.languageserver.diagnostics.BSLDiagnostic;
+import org.github._1c_syntax.bsl.languageserver.diagnostics.metadata.DiagnosticType;
 import org.github._1c_syntax.bsl.languageserver.providers.DiagnosticProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +51,15 @@ public class BslValidator implements IExternalBslValidator {
 		bslServerContext.addDocument(objectUri, objectText);
 		List<Diagnostic> diagnostics = diagnosticProvider.computeDiagnostics(bslServerContext.getDocument(objectUri));
 		for (Diagnostic diagnostic : diagnostics) {
+			Class<? extends BSLDiagnostic> diagnosticClass = DiagnosticProvider.getBSLDiagnosticClass(diagnostic);
+			DiagnosticType diagnosticType = DiagnosticProvider.getDiagnosticType(diagnosticClass);
+			org.github._1c_syntax.bsl.languageserver.diagnostics.metadata.DiagnosticSeverity diagnosticSeverity = DiagnosticProvider
+					.getDiagnosticSeverity(diagnosticClass);
+
+			if (diagnosticType.equals(DiagnosticType.CODE_SMELL) && diagnosticSeverity
+					.equals(org.github._1c_syntax.bsl.languageserver.diagnostics.metadata.DiagnosticSeverity.INFO))
+				continue;
+
 			Integer offset = 0;
 			Integer length = 0;
 			try {
@@ -68,7 +78,7 @@ public class BslValidator implements IExternalBslValidator {
 			if (diagnosticObject == null)
 				diagnosticObject = object;
 
-			if (diagnostic.getSeverity().equals(DiagnosticSeverity.Error))
+			if (diagnosticType.equals(DiagnosticType.ERROR) || diagnosticType.equals(DiagnosticType.VULNERABILITY))
 				messageAcceptor.acceptError(diagnostic.getMessage(), diagnosticObject, offset, length, "", "");
 
 			else
