@@ -1,4 +1,5 @@
-language: node_js
+env:
+  - PLUGIN_VERSION="0.5.1"
 
 jdk:
   - openjdk8
@@ -11,8 +12,7 @@ addons:
 git:
   depth: false
 
-env:
-  - PLUGIN_VERSION="0.5.1" SONAR_PROJECT_KEY="DoublesunRUS_ru.capralow.dt.bslls.validator"
+language: node_js
 
 script: 
 - mvn clean test verify -f build/pom.xml -s build/settings.xml 
