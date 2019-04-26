@@ -33,7 +33,7 @@ after_success:
 - find repository/target/repository/ -type f | xargs -L 1 bash -c 'curl --ftp-create-dirs -T $1 -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/$PLUGIN_VERSION/${1##repository/target/repository/}' \;
 - find repository/index.html -type f | xargs -L 1 bash -c 'curl --ftp-create-dirs -T $1 -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/$PLUGIN_VERSION/${1##repository/}' \;
 
-- if (!$TRAVIS_TAG.isEmpty()) {
+- if [ "$TRAVIS_TAG" != "" ]; then
     curl -l -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/ | xargs -I{} -- curl -v -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/ -Q "-DELE {}"
     curl -l -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/features/ | xargs -I{} -- curl -v -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/features/ -Q "-DELE {}"
     curl -l -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/plugins/ | xargs -I{} -- curl -v -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/plugins/ -Q "-DELE {}"
@@ -42,7 +42,7 @@ after_success:
     curl -l -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/ -v -Q "-RMD latest"
     find repository/target/repository/ -type f | xargs -L 1 bash -c 'curl --ftp-create-dirs -T $1 -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/${1##repository/target/repository/}' \;
     find repository/index.html -type f | xargs -L 1 bash -c 'curl --ftp-create-dirs -T $1 -u $FTP_USER:$FTP_PASSWORD ftp://$FTP_ADDRESS/latest/${1##repository/}' \;
-}
+  fi
 
 deploy:
   provider: releases
