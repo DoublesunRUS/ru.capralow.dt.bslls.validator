@@ -6,7 +6,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>ru.capralow.dt.bslls.validator</groupId>
 	<artifactId>build</artifactId>
-	<version>0.5.1-SNAPSHOT</version>
+	<version>0.5.2-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<name>BSL проверки для EDT</name>
@@ -56,7 +56,7 @@
 						<artifact>
 							<groupId>ru.capralow.dt.bslls.validator.target</groupId>
 							<artifactId>default</artifactId>
-							<version>0.5.1-SNAPSHOT</version>
+							<version>0.5.2-SNAPSHOT</version>
 						</artifact>
 					</target>
 					<environments>
@@ -118,25 +118,6 @@
 				</executions>
 			</plugin>
 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-clean-plugin</artifactId>
-				<version>${clean.maven.plugin.version}</version>
-				<configuration>
-					<filesets>
-						<fileset>
-							<directory>src-gen</directory>
-							<includes>
-								<include>**/*</include>
-							</includes>
-							<excludes>
-								<exclude>.gitignore</exclude>
-							</excludes>
-							<followSymlinks>false</followSymlinks>
-						</fileset>
-					</filesets>
-				</configuration>
-			</plugin>
 		</plugins>
 		
 		<pluginManagement>
@@ -209,23 +190,6 @@
 					<version>${tycho.extras.version}</version>
 				</plugin>
 
-				<plugin>
-					<groupId>org.eclipse.xtend</groupId>
-					<artifactId>xtend-maven-plugin</artifactId>
-					<version>${xtend.maven.plugin.version}</version>
-					<executions>
-						<execution>
-							<goals>
-								<goal>compile</goal>
-							</goals>
-							<!-- optionally you can configure a different target folder -->
-							<configuration>
-								<outputDirectory>${basedir}/src-gen</outputDirectory>
-							</configuration>
-						</execution>
-					</executions>
-				</plugin>
-				
 				<plugin>
 					<groupId>org.jacoco</groupId>
 					<artifactId>jacoco-maven-plugin</artifactId>

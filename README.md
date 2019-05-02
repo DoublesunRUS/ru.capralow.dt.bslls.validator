@@ -5,7 +5,7 @@
 
 Минимальная версия EDT: 1.10.2.53
 
-Текущий релиз в ветке [master: 0.5.1](https://github.com/DoublesunRUS/ru.capralow.dt.bslls.validator/tree/master).<br>
+Текущий релиз в ветке [master: 0.5.2](https://github.com/DoublesunRUS/ru.capralow.dt.bslls.validator/tree/master).<br>
 Разработка ведется в ветке [dev](https://github.com/DoublesunRUS/ru.capralow.dt.bslls.validator/tree/dev).<br>
 
 В данном репозитории хранятся только исходники.<br>
