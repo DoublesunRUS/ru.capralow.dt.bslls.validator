@@ -14,16 +14,12 @@ import org.github._1c_syntax.bsl.languageserver.context.ServerContext;
 import org.github._1c_syntax.bsl.languageserver.diagnostics.BSLDiagnostic;
 import org.github._1c_syntax.bsl.languageserver.diagnostics.metadata.DiagnosticType;
 import org.github._1c_syntax.bsl.languageserver.providers.DiagnosticProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com._1c.g5.v8.dt.bsl.model.Module;
 import com._1c.g5.v8.dt.bsl.validation.CustomValidationMessageAcceptor;
 import com._1c.g5.v8.dt.bsl.validation.IExternalBslValidator;
 
 public class BslValidator implements IExternalBslValidator {
-	private static final Logger LOGGER = LoggerFactory.getLogger(BslValidator.class);
-
 	private DiagnosticProvider diagnosticProvider;
 
 	public BslValidator() {
@@ -70,7 +66,8 @@ public class BslValidator implements IExternalBslValidator {
 				length = endOffset - offset;
 
 			} catch (BadLocationException e) {
-				LOGGER.error("Не удалось определить объект, к которому относится диагностическое сообщение.", e);
+				String msg = "Не удалось определить объект, к которому относится диагностическое сообщение.";
+				BslValidatorPlugin.log(BslValidatorPlugin.createErrorStatus(msg, e));
 
 			}
 			EObject diagnosticObject = new EObjectAtOffsetHelper()

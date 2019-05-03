@@ -1,30 +1,48 @@
 package ru.capralow.dt.bslls.validator.plugin.ui;
 
-import org.osgi.framework.BundleActivator;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
 
-public class BslValidatorPlugin implements BundleActivator {
+public class BslValidatorPlugin extends AbstractUIPlugin {
+	public static final String ID = "ru.capralow.dt.bslls.validator.plugin.ui";
+	private static BslValidatorPlugin plugin;
 
-	private static BundleContext context;
-
-	static BundleContext getContext() {
-		return context;
+	public static IStatus createErrorStatus(String message) {
+		return new Status(IStatus.ERROR, ID, 0, message, (Throwable) null);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.osgi.framework.BundleActivator#start(org.osgi.framework.BundleContext)
-	 */
+	public static IStatus createErrorStatus(String message, int code) {
+		return new Status(IStatus.ERROR, ID, code, message, (Throwable) null);
+	}
+
+	public static IStatus createErrorStatus(String message, int code, Throwable throwable) {
+		return new Status(IStatus.ERROR, ID, code, message, throwable);
+	}
+
+	public static IStatus createErrorStatus(String message, Throwable throwable) {
+		return new Status(IStatus.ERROR, ID, 0, message, throwable);
+	}
+
+	public static BslValidatorPlugin getDefault() {
+		return plugin;
+	}
+
+	public static void log(IStatus status) {
+		getDefault().getLog().log(status);
+	}
+
+	@Override
 	public void start(BundleContext bundleContext) throws Exception {
-		BslValidatorPlugin.context = bundleContext;
+		super.start(bundleContext);
+		plugin = this;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.osgi.framework.BundleActivator#stop(org.osgi.framework.BundleContext)
-	 */
+	@Override
 	public void stop(BundleContext bundleContext) throws Exception {
-		BslValidatorPlugin.context = null;
+		plugin = null;
+		super.stop(bundleContext);
 	}
 
 }

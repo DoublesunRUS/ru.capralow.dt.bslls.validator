@@ -6,14 +6,15 @@ Bundle-Version: 0.5.2.qualifier
 Bundle-Activator: ru.capralow.dt.bslls.validator.plugin.ui.BslValidatorPlugin
 Bundle-Vendor: %providerName
 Require-Bundle: org.eclipse.core.runtime,
+ org.eclipse.ui,
  com._1c.g5.v8.dt.product.application;bundle-version="1.10.2.53"
 Bundle-Localization: plugin
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Automatic-Module-Name: dt.validator.bsl-language-server.plugin
 Bundle-ActivationPolicy: lazy
-Import-Package: com._1c.g5.v8.dt.bsl.model;version="3.5.0",
- com._1c.g5.v8.dt.bsl.validation;version="10.0.0",
- com._1c.g5.v8.dt.mcore;version="4.1.0",
+Import-Package: com._1c.g5.v8.dt.bsl.model,
+ com._1c.g5.v8.dt.bsl.validation,
+ com._1c.g5.v8.dt.mcore,
  org.eclipse.emf.common.notify,
  org.eclipse.emf.ecore,
  org.eclipse.emf.ecore.resource,
