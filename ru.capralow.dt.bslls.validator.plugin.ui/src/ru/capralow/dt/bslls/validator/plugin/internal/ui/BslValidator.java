@@ -1,17 +1,23 @@
-package ru.capralow.dt.bslls.validator.plugin.ui;
+package ru.capralow.dt.bslls.validator.plugin.internal.ui;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.lsp4j.Diagnostic;
+import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.xtext.nodemodel.ICompositeNode;
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils;
 import org.eclipse.xtext.resource.EObjectAtOffsetHelper;
 import org.eclipse.xtext.resource.XtextResource;
+import org.github._1c_syntax.bsl.languageserver.configuration.LanguageServerConfiguration;
 import org.github._1c_syntax.bsl.languageserver.context.ServerContext;
 import org.github._1c_syntax.bsl.languageserver.diagnostics.BSLDiagnostic;
+import org.github._1c_syntax.bsl.languageserver.diagnostics.FunctionShouldHaveReturnDiagnostic;
+import org.github._1c_syntax.bsl.languageserver.diagnostics.ProcedureReturnsValueDiagnostic;
 import org.github._1c_syntax.bsl.languageserver.diagnostics.metadata.DiagnosticType;
 import org.github._1c_syntax.bsl.languageserver.providers.DiagnosticProvider;
 
@@ -25,7 +31,17 @@ public class BslValidator implements IExternalBslValidator {
 	public BslValidator() {
 		super();
 
-		diagnosticProvider = new DiagnosticProvider();
+		LanguageServerConfiguration configuration = LanguageServerConfiguration.create();
+
+		Map<String, Either<Boolean, Map<String, Object>>> diagnostics = new HashMap<>();
+		diagnostics.put(DiagnosticProvider.getDiagnosticCode(FunctionShouldHaveReturnDiagnostic.class),
+				Either.forLeft(false));
+		diagnostics.put(DiagnosticProvider.getDiagnosticCode(ProcedureReturnsValueDiagnostic.class),
+				Either.forLeft(false));
+
+		configuration.setDiagnostics(diagnostics);
+
+		diagnosticProvider = new DiagnosticProvider(configuration);
 	}
 
 	@Override

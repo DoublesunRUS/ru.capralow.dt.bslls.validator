@@ -1,4 +1,4 @@
-package ru.capralow.dt.bslls.validator.plugin.ui;
+package ru.capralow.dt.bslls.validator.plugin.internal.ui;
 
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
