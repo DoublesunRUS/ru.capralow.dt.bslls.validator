@@ -6,4 +6,10 @@
 			class="ru.capralow.dt.bslls.validator.plugin.internal.ui.BslValidator">
 		</externalValidator>
 	</extension>
+
+	<extension point="com._1c.g5.v8.dt.bsl.ui.externalQuickfixProvider">
+		<externalQuickfixProvider
+			class="ru.capralow.dt.bslls.validator.plugin.internal.ui.BslQuickFix">
+		</externalQuickfixProvider>
+	</extension>
 </plugin>

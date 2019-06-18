@@ -13,16 +13,20 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Automatic-Module-Name: dt.validator.bsl-language-server.plugin
 Bundle-ActivationPolicy: lazy
 Import-Package: com._1c.g5.v8.dt.bsl.model,
+ com._1c.g5.v8.dt.bsl.ui.quickfix,
  com._1c.g5.v8.dt.bsl.validation,
  com._1c.g5.v8.dt.mcore,
  org.eclipse.emf.common.notify,
  org.eclipse.emf.ecore,
  org.eclipse.emf.ecore.resource,
  org.eclipse.jface.text,
+ org.eclipse.text.edits,
  org.eclipse.xtext,
  org.eclipse.xtext.nodemodel,
  org.eclipse.xtext.nodemodel.util,
  org.eclipse.xtext.resource,
+ org.eclipse.xtext.ui.editor.model.edit,
+ org.eclipse.xtext.ui.editor.quickfix,
  org.eclipse.xtext.util,
  org.eclipse.xtext.validation
 Bundle-ClassPath: .,
