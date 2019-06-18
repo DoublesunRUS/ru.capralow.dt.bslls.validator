@@ -18,20 +18,20 @@ public class BslQuickFix extends AbstractExternalQuickfixProvider {
 		for (String issueLine : issueData) {
 			String[] issueList = issueLine.split("[,]");
 
-			String issueMessage = issueList[1];
-			String issueCommand = issueList[2];
+			String issueCommand = issueList[1];
+			String issueMessage = issueList[2];
 			Integer issueOffset = Integer.decode(issueList[3]);
 			Integer issueLength = Integer.decode(issueList[4]);
-			String issueNewTest = issueList[5];
+			String issueNewText = issueList[5];
 
 			acceptor.accept(issue,
-					issueMessage,
 					issueCommand,
+					issueMessage,
 					(String) null,
 					(IModification) new AbstractExternalQuickfixProvider.ExternalQuickfixModification(issue,
 							(Class) Method.class,
 							method -> {
-								return new ReplaceEdit(issueOffset, issueLength, issueNewTest);
+								return new ReplaceEdit(issueOffset, issueLength, issueNewText);
 							}));
 		}
 	}

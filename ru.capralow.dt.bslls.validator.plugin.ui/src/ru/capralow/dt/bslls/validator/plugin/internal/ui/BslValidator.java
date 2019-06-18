@@ -127,8 +127,8 @@ public class BslValidator implements IExternalBslValidator {
 				continue;
 
 			List<String> issueLine = new ArrayList<>();
-			issueLine.add(diagnostic.getMessage());
 			issueLine.add(quickFix.getTitle());
+			issueLine.add(diagnostic.getMessage());
 			issueLine.add(offset.toString());
 			issueLine.add(length.toString());
 			issueLine.add(change.get(0).getNewText());
