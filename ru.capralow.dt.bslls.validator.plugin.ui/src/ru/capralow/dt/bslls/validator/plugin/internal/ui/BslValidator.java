@@ -1,5 +1,6 @@
 package ru.capralow.dt.bslls.validator.plugin.internal.ui;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -9,6 +10,7 @@ import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.Diagnostic;
+import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.xtext.nodemodel.ICompositeNode;
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils;
@@ -95,27 +97,45 @@ public class BslValidator implements IExternalBslValidator {
 			if (diagnosticObject == null)
 				diagnosticObject = object;
 
-			// Попытка передать сюда что-нибудь и посмотреть, будет ли доступна информация в
-			// quick fix
-			String[] issueData = new String[1];
-			if (QuickFixProvider.class.isAssignableFrom(bslDiagnosticClass)) {
-				QuickFixProvider diagnosticInstance = (QuickFixProvider) diagnosticProvider
-						.getDiagnosticInstance(bslDiagnosticClass);
-				List<CodeAction> quickFixes = diagnosticInstance.getQuickFixes(diagnostic, null, documentContext);
-
-				issueData = new String[quickFixes.size() + 1];
-			}
-			issueData[0] = "Пропущена точка с запятой в конце выражения";
+			String[] issueData = getIssueData(diagnostic, bslDiagnosticClass, documentContext, offset, length);
 
 			if (diagnosticType.equals(DiagnosticType.ERROR) || diagnosticType.equals(DiagnosticType.VULNERABILITY))
 				messageAcceptor.acceptError(diagnostic
-						.getMessage(), diagnosticObject, offset, length, issueData[0], issueData);
+						.getMessage(), diagnosticObject, offset, length, "bsl-language-server", issueData);
 
 			else
 				messageAcceptor.acceptWarning(diagnostic
-						.getMessage(), diagnosticObject, offset, length, issueData[0], issueData);
+						.getMessage(), diagnosticObject, offset, length, "bsl-language-server", issueData);
 		}
 
+	}
+
+	private String[] getIssueData(Diagnostic diagnostic, Class<? extends BSLDiagnostic> bslDiagnosticClass,
+			DocumentContext documentContext, Integer offset, Integer length) {
+		String[] issueData = { "" };
+		if (!QuickFixProvider.class.isAssignableFrom(bslDiagnosticClass))
+			return issueData;
+
+		QuickFixProvider diagnosticInstance = (QuickFixProvider) diagnosticProvider
+				.getDiagnosticInstance(bslDiagnosticClass);
+		List<CodeAction> quickFixes = diagnosticInstance.getQuickFixes(diagnostic, null, documentContext);
+
+		issueData = new String[quickFixes.size()];
+		for (CodeAction quickFix : quickFixes) {
+			List<TextEdit> change = quickFix.getEdit().getChanges().get(documentContext.getUri());
+			if (change.isEmpty())
+				continue;
+
+			List<String> issueLine = new ArrayList<>();
+			issueLine.add(diagnostic.getMessage());
+			issueLine.add(quickFix.getTitle());
+			issueLine.add(offset.toString());
+			issueLine.add(length.toString());
+			issueLine.add(change.get(0).getNewText());
+			issueData[quickFixes.indexOf(quickFix)] = issueLine.toString();
+		}
+
+		return issueData;
 	}
 
 }
