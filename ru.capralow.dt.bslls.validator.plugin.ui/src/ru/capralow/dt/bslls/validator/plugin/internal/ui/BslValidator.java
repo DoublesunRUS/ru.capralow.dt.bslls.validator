@@ -10,6 +10,7 @@ import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.Diagnostic;
+import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.xtext.nodemodel.ICompositeNode;
@@ -78,26 +79,16 @@ public class BslValidator implements IExternalBslValidator {
 					.equals(org.github._1c_syntax.bsl.languageserver.diagnostics.metadata.DiagnosticSeverity.INFO))
 				continue;
 
-			Integer offset = 0;
-			Integer length = 0;
-			try {
-				offset = doc.getLineOffset(diagnostic.getRange().getStart().getLine())
-						+ diagnostic.getRange().getStart().getCharacter();
-				Integer endOffset = doc.getLineOffset(diagnostic.getRange().getEnd().getLine())
-						+ diagnostic.getRange().getEnd().getCharacter();
-				length = endOffset - offset;
+			Integer[] offsetAndLength = getOffsetAndLength(diagnostic.getRange(), doc);
+			Integer offset = offsetAndLength[0];
+			Integer length = offsetAndLength[1];
 
-			} catch (BadLocationException e) {
-				String msg = "Не удалось определить объект, к которому относится диагностическое сообщение.";
-				BslValidatorPlugin.log(BslValidatorPlugin.createErrorStatus(msg, e));
-
-			}
 			EObject diagnosticObject = new EObjectAtOffsetHelper()
 					.resolveContainedElementAt((XtextResource) object.eResource(), offset);
 			if (diagnosticObject == null)
 				diagnosticObject = object;
 
-			String[] issueData = getIssueData(diagnostic, bslDiagnosticClass, documentContext, offset, length);
+			String[] issueData = getIssueData(diagnostic, bslDiagnosticClass, documentContext, doc);
 
 			if (diagnosticType.equals(DiagnosticType.ERROR) || diagnosticType.equals(DiagnosticType.VULNERABILITY))
 				messageAcceptor.acceptError(diagnostic
@@ -111,7 +102,7 @@ public class BslValidator implements IExternalBslValidator {
 	}
 
 	private String[] getIssueData(Diagnostic diagnostic, Class<? extends BSLDiagnostic> bslDiagnosticClass,
-			DocumentContext documentContext, Integer offset, Integer length) {
+			DocumentContext documentContext, Document doc) {
 		String[] issueData = { "" };
 		if (!QuickFixProvider.class.isAssignableFrom(bslDiagnosticClass))
 			return issueData;
@@ -122,20 +113,50 @@ public class BslValidator implements IExternalBslValidator {
 
 		issueData = new String[quickFixes.size()];
 		for (CodeAction quickFix : quickFixes) {
-			List<TextEdit> change = quickFix.getEdit().getChanges().get(documentContext.getUri());
-			if (change.isEmpty())
+			List<TextEdit> changes = quickFix.getEdit().getChanges().get(documentContext.getUri());
+			if (changes.isEmpty())
 				continue;
 
 			List<String> issueLine = new ArrayList<>();
 			issueLine.add(quickFix.getTitle());
 			issueLine.add(diagnostic.getMessage());
-			issueLine.add(offset.toString());
-			issueLine.add(length.toString());
-			issueLine.add(change.get(0).getNewText());
-			issueData[quickFixes.indexOf(quickFix)] = issueLine.toString();
+			issueLine.add(String.valueOf(changes.size()));
+
+			for (TextEdit change : changes) {
+				Integer[] offsetAndLength = getOffsetAndLength(change.getRange(), doc);
+				Integer offset = offsetAndLength[0];
+				Integer length = offsetAndLength[1];
+
+				issueLine.add(offset.toString());
+				issueLine.add(length.toString());
+				issueLine.add(change.getNewText());
+			}
+
+			issueData[quickFixes.indexOf(quickFix)] = String.join(",", issueLine);
 		}
 
 		return issueData;
+	}
+
+	private Integer[] getOffsetAndLength(Range range, Document doc) {
+		Integer offset = 0;
+		Integer length = 0;
+		try {
+			offset = doc.getLineOffset(range.getStart().getLine()) + range.getStart().getCharacter();
+			Integer endOffset = doc.getLineOffset(range.getEnd().getLine()) + range.getEnd().getCharacter();
+			length = endOffset - offset;
+
+		} catch (BadLocationException e) {
+			BslValidatorPlugin
+					.log(BslValidatorPlugin.createErrorStatus(Messages.BslValidator_Bad_Location_Exception, e));
+
+		}
+
+		Integer[] result = new Integer[2];
+		result[0] = offset;
+		result[1] = length;
+
+		return result;
 	}
 
 }
