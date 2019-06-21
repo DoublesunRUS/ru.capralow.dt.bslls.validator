@@ -7,6 +7,7 @@ Bundle-Activator: ru.capralow.dt.bslls.validator.plugin.internal.ui.BslValidator
 Bundle-Vendor: %providerName
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.ui,
+ org.eclipse.xtext.ui,
  com._1c.g5.v8.dt.product.application;bundle-version="1.10.2.57"
 Bundle-Localization: plugin
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -25,8 +26,6 @@ Import-Package: com._1c.g5.v8.dt.bsl.model,
  org.eclipse.xtext.nodemodel,
  org.eclipse.xtext.nodemodel.util,
  org.eclipse.xtext.resource,
- org.eclipse.xtext.ui.editor.model.edit,
- org.eclipse.xtext.ui.editor.quickfix,
  org.eclipse.xtext.util,
  org.eclipse.xtext.validation
 Bundle-ClassPath: .,

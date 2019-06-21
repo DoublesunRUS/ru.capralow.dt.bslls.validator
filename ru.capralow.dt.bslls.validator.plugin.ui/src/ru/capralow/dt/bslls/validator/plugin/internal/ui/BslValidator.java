@@ -144,7 +144,7 @@ public class BslValidator implements IExternalBslValidator {
 		try {
 			offset = doc.getLineOffset(range.getStart().getLine()) + range.getStart().getCharacter();
 			Integer endOffset = doc.getLineOffset(range.getEnd().getLine()) + range.getEnd().getCharacter();
-			length = endOffset - offset;
+			length = endOffset - offset + 1;
 
 		} catch (BadLocationException e) {
 			BslValidatorPlugin
