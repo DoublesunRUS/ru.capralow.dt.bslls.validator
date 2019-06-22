@@ -92,18 +92,18 @@ public class BslValidator implements IExternalBslValidator {
 
 			if (diagnosticType.equals(DiagnosticType.ERROR) || diagnosticType.equals(DiagnosticType.VULNERABILITY))
 				messageAcceptor.acceptError(diagnostic
-						.getMessage(), diagnosticObject, offset, length, "bsl-language-server", issueData);
+						.getMessage(), diagnosticObject, offset, length, "bsl-language-server", issueData); //$NON-NLS-1$
 
 			else
 				messageAcceptor.acceptWarning(diagnostic
-						.getMessage(), diagnosticObject, offset, length, "bsl-language-server", issueData);
+						.getMessage(), diagnosticObject, offset, length, "bsl-language-server", issueData); //$NON-NLS-1$
 		}
 
 	}
 
 	private String[] getIssueData(Diagnostic diagnostic, Class<? extends BSLDiagnostic> bslDiagnosticClass,
 			DocumentContext documentContext, Document doc) {
-		String[] issueData = { "" };
+		String[] issueData = { "" }; //$NON-NLS-1$
 		if (!QuickFixProvider.class.isAssignableFrom(bslDiagnosticClass))
 			return issueData;
 
@@ -129,7 +129,7 @@ public class BslValidator implements IExternalBslValidator {
 			issueLine.add(length.toString());
 			issueLine.add(change.getNewText());
 
-			issueData[quickFixes.indexOf(quickFix)] = String.join(",", issueLine);
+			issueData[quickFixes.indexOf(quickFix)] = String.join(",", issueLine); //$NON-NLS-1$
 		}
 
 		return issueData;

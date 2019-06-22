@@ -6,7 +6,7 @@ import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
 
 public class BslValidatorPlugin extends AbstractUIPlugin {
-	public static final String ID = "ru.capralow.dt.bslls.validator.plugin.ui";
+	public static final String ID = "ru.capralow.dt.bslls.validator.plugin.ui"; //$NON-NLS-1$
 	private static BslValidatorPlugin plugin;
 
 	public static IStatus createErrorStatus(String message) {
