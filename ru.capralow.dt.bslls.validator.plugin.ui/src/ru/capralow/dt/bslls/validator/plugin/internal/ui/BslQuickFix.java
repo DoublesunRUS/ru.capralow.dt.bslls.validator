@@ -18,9 +18,9 @@ public class BslQuickFix extends AbstractExternalQuickfixProvider {
 
 			String issueCommand = issueList[0];
 			String issueMessage = issueList[1];
-			Integer issueOffset = Integer.decode(issueList[3]);
-			Integer issueLength = Integer.decode(issueList[4]);
-			String issueNewText = issueList[5];
+			Integer issueOffset = Integer.decode(issueList[2]);
+			Integer issueLength = Integer.decode(issueList[3]);
+			String issueNewText = issueList[4];
 
 			acceptor.accept(issue,
 					issueCommand,

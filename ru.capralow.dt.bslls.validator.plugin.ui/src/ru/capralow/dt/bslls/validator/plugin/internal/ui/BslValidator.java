@@ -114,28 +114,26 @@ public class BslValidator implements IExternalBslValidator {
 		issueData = new String[quickFixes.size()];
 		for (CodeAction quickFix : quickFixes) {
 			List<TextEdit> changes = quickFix.getEdit().getChanges().get(documentContext.getUri());
-			if (changes.isEmpty())
+			if (changes.size() != 1)
 				continue;
+
+			TextEdit change = changes.get(0);
+			Integer[] offsetAndLength = getOffsetAndLength(change.getRange(), doc);
+			Integer offset = offsetAndLength[0];
+			Integer length = offsetAndLength[1];
 
 			List<String> issueLine = new ArrayList<>();
 			issueLine.add(quickFix.getTitle());
 			issueLine.add(diagnostic.getMessage());
-			issueLine.add(String.valueOf(changes.size()));
-
-			for (TextEdit change : changes) {
-				Integer[] offsetAndLength = getOffsetAndLength(change.getRange(), doc);
-				Integer offset = offsetAndLength[0];
-				Integer length = offsetAndLength[1];
-
-				issueLine.add(offset.toString());
-				issueLine.add(length.toString());
-				issueLine.add(change.getNewText());
-			}
+			issueLine.add(offset.toString());
+			issueLine.add(length.toString());
+			issueLine.add(change.getNewText());
 
 			issueData[quickFixes.indexOf(quickFix)] = String.join(",", issueLine);
 		}
 
 		return issueData;
+
 	}
 
 	private Integer[] getOffsetAndLength(Range range, Document doc) {
