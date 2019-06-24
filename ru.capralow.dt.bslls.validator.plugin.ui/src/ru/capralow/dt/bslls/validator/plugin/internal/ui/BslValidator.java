@@ -22,8 +22,11 @@ import org.github._1c_syntax.bsl.languageserver.context.DocumentContext;
 import org.github._1c_syntax.bsl.languageserver.context.ServerContext;
 import org.github._1c_syntax.bsl.languageserver.diagnostics.BSLDiagnostic;
 import org.github._1c_syntax.bsl.languageserver.diagnostics.FunctionShouldHaveReturnDiagnostic;
+import org.github._1c_syntax.bsl.languageserver.diagnostics.ParseErrorDiagnostic;
 import org.github._1c_syntax.bsl.languageserver.diagnostics.ProcedureReturnsValueDiagnostic;
 import org.github._1c_syntax.bsl.languageserver.diagnostics.QuickFixProvider;
+import org.github._1c_syntax.bsl.languageserver.diagnostics.UnknownPreprocessorSymbolDiagnostic;
+import org.github._1c_syntax.bsl.languageserver.diagnostics.UsingServiceTagDiagnostic;
 import org.github._1c_syntax.bsl.languageserver.diagnostics.metadata.DiagnosticType;
 import org.github._1c_syntax.bsl.languageserver.providers.DiagnosticProvider;
 
@@ -32,6 +35,8 @@ import com._1c.g5.v8.dt.bsl.validation.CustomValidationMessageAcceptor;
 import com._1c.g5.v8.dt.bsl.validation.IExternalBslValidator;
 
 public class BslValidator implements IExternalBslValidator {
+	private static final String[] EMPTY_ARRAY = {};
+
 	private DiagnosticProvider diagnosticProvider;
 
 	public BslValidator() {
@@ -40,9 +45,17 @@ public class BslValidator implements IExternalBslValidator {
 		LanguageServerConfiguration configuration = LanguageServerConfiguration.create();
 
 		Map<String, Either<Boolean, Map<String, Object>>> diagnostics = new HashMap<>();
+
+		// CODE_SMELL.INFO
+		diagnostics.put(DiagnosticProvider.getDiagnosticCode(UsingServiceTagDiagnostic.class), Either.forLeft(false));
+
+		// Есть в EDT
 		diagnostics.put(DiagnosticProvider.getDiagnosticCode(FunctionShouldHaveReturnDiagnostic.class),
 				Either.forLeft(false));
+		diagnostics.put(DiagnosticProvider.getDiagnosticCode(ParseErrorDiagnostic.class), Either.forLeft(false));
 		diagnostics.put(DiagnosticProvider.getDiagnosticCode(ProcedureReturnsValueDiagnostic.class),
+				Either.forLeft(false));
+		diagnostics.put(DiagnosticProvider.getDiagnosticCode(UnknownPreprocessorSymbolDiagnostic.class),
 				Either.forLeft(false));
 
 		configuration.setDiagnostics(diagnostics);
@@ -72,12 +85,6 @@ public class BslValidator implements IExternalBslValidator {
 		for (Diagnostic diagnostic : diagnostics) {
 			Class<? extends BSLDiagnostic> bslDiagnosticClass = DiagnosticProvider.getBSLDiagnosticClass(diagnostic);
 			DiagnosticType diagnosticType = DiagnosticProvider.getDiagnosticType(bslDiagnosticClass);
-			org.github._1c_syntax.bsl.languageserver.diagnostics.metadata.DiagnosticSeverity diagnosticSeverity = DiagnosticProvider
-					.getDiagnosticSeverity(bslDiagnosticClass);
-
-			if (diagnosticType.equals(DiagnosticType.CODE_SMELL) && diagnosticSeverity
-					.equals(org.github._1c_syntax.bsl.languageserver.diagnostics.metadata.DiagnosticSeverity.INFO))
-				continue;
 
 			Integer[] offsetAndLength = getOffsetAndLength(diagnostic.getRange(), doc);
 			Integer offset = offsetAndLength[0];
@@ -90,28 +97,46 @@ public class BslValidator implements IExternalBslValidator {
 
 			String[] issueData = getIssueData(diagnostic, bslDiagnosticClass, documentContext, doc);
 
-			if (diagnosticType.equals(DiagnosticType.ERROR) || diagnosticType.equals(DiagnosticType.VULNERABILITY))
-				messageAcceptor.acceptError(diagnostic
-						.getMessage(), diagnosticObject, offset, length, "bsl-language-server", issueData); //$NON-NLS-1$
+			if (diagnosticType.equals(DiagnosticType.ERROR) || diagnosticType.equals(DiagnosticType.VULNERABILITY)) {
+				if (issueData.length == 0)
+					messageAcceptor.acceptError(diagnostic.getMessage(), diagnosticObject, offset, length, ""); //$NON-NLS-1$
 
-			else
-				messageAcceptor.acceptWarning(diagnostic
-						.getMessage(), diagnosticObject, offset, length, "bsl-language-server", issueData); //$NON-NLS-1$
+				else
+					messageAcceptor.acceptError(diagnostic.getMessage(),
+							diagnosticObject,
+							offset,
+							length,
+							"bsl-language-server", //$NON-NLS-1$
+							issueData);
+
+			} else {
+				if (issueData.length == 0)
+					messageAcceptor.acceptWarning(diagnostic.getMessage(), diagnosticObject, offset, length, ""); //$NON-NLS-1$
+
+				else
+					messageAcceptor.acceptWarning(diagnostic.getMessage(),
+							diagnosticObject,
+							offset,
+							length,
+							"bsl-language-server", //$NON-NLS-1$
+							issueData);
+
+			}
 		}
 
 	}
 
 	private String[] getIssueData(Diagnostic diagnostic, Class<? extends BSLDiagnostic> bslDiagnosticClass,
 			DocumentContext documentContext, Document doc) {
-		String[] issueData = { "" }; //$NON-NLS-1$
-		if (!QuickFixProvider.class.isAssignableFrom(bslDiagnosticClass))
-			return issueData;
+		if (documentContext == null || !QuickFixProvider.class.isAssignableFrom(bslDiagnosticClass))
+			return EMPTY_ARRAY;
 
 		QuickFixProvider diagnosticInstance = (QuickFixProvider) diagnosticProvider
 				.getDiagnosticInstance(bslDiagnosticClass);
 		List<CodeAction> quickFixes = diagnosticInstance.getQuickFixes(diagnostic, null, documentContext);
 
-		issueData = new String[quickFixes.size()];
+		List<String> issueArray = new ArrayList<>();
+
 		for (CodeAction quickFix : quickFixes) {
 			List<TextEdit> changes = quickFix.getEdit().getChanges().get(documentContext.getUri());
 			if (changes.size() != 1)
@@ -129,8 +154,15 @@ public class BslValidator implements IExternalBslValidator {
 			issueLine.add(length.toString());
 			issueLine.add(change.getNewText());
 
-			issueData[quickFixes.indexOf(quickFix)] = String.join(",", issueLine); //$NON-NLS-1$
+			issueArray.add(String.join(",", issueLine)); //$NON-NLS-1$
 		}
+
+		if (issueArray.isEmpty())
+			return EMPTY_ARRAY;
+
+		String[] issueData = new String[issueArray.size()];
+		for (String element : issueArray)
+			issueData[issueArray.indexOf(element)] = element;
 
 		return issueData;
 
@@ -142,7 +174,7 @@ public class BslValidator implements IExternalBslValidator {
 		try {
 			offset = doc.getLineOffset(range.getStart().getLine()) + range.getStart().getCharacter();
 			Integer endOffset = doc.getLineOffset(range.getEnd().getLine()) + range.getEnd().getCharacter();
-			length = endOffset - offset + 1;
+			length = endOffset - offset;
 
 		} catch (BadLocationException e) {
 			BslValidatorPlugin

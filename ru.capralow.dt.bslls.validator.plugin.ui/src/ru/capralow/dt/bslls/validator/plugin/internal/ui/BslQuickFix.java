@@ -1,11 +1,11 @@
 package ru.capralow.dt.bslls.validator.plugin.internal.ui;
 
+import org.eclipse.emf.ecore.EObject;
 import org.eclipse.text.edits.ReplaceEdit;
 import org.eclipse.xtext.ui.editor.quickfix.Fix;
 import org.eclipse.xtext.ui.editor.quickfix.IssueResolutionAcceptor;
 import org.eclipse.xtext.validation.Issue;
 
-import com._1c.g5.v8.dt.bsl.model.Module;
 import com._1c.g5.v8.dt.bsl.ui.quickfix.AbstractExternalQuickfixProvider;
 
 public class BslQuickFix extends AbstractExternalQuickfixProvider {
@@ -20,14 +20,14 @@ public class BslQuickFix extends AbstractExternalQuickfixProvider {
 			String issueMessage = issueList[1];
 			Integer issueOffset = Integer.decode(issueList[2]);
 			Integer issueLength = Integer.decode(issueList[3]);
-			String issueNewText = issueList[4];
+			String issueNewText = issueList.length == 5 ? issueList[4] : ""; //$NON-NLS-1$
 
 			acceptor.accept(issue,
 					issueCommand,
 					issueMessage,
 					(String) null,
-					new AbstractExternalQuickfixProvider.ExternalQuickfixModification<Module>(issue,
-							Module.class,
+					new AbstractExternalQuickfixProvider.ExternalQuickfixModification<>(issue,
+							EObject.class,
 							module -> new ReplaceEdit(issueOffset, issueLength, issueNewText)));
 		}
 	}
