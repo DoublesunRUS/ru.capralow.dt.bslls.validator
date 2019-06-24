@@ -5,7 +5,7 @@
 
 Минимальная версия EDT: 1.10.2.57
 
-Текущий релиз в ветке [master: 0.6.1](https://github.com/DoublesunRUS/ru.capralow.dt.bslls.validator/tree/master).<br>
+Текущий релиз в ветке [master: 0.8.0](https://github.com/DoublesunRUS/ru.capralow.dt.bslls.validator/tree/master).<br>
 Разработка ведется в ветке [dev](https://github.com/DoublesunRUS/ru.capralow.dt.bslls.validator/tree/dev).<br>
 
 В данном репозитории хранятся только исходники.<br>
@@ -15,10 +15,22 @@
 
 ### BSL Language Server
 Плагин использует [BSL Language Server](https://github.com/1c-syntax/bsl-language-server) в соответствии с [лицензией](https://github.com/1c-syntax/bsl-language-server/blob/develop/COPYING.md).<br>
-В состав плагина включена версия 0.6.0<br>
+В состав плагина включена версия 0.8.0<br>
 Список диагностик можно посмотреть на [официальном сайте](https://1c-syntax.github.io/bsl-language-server/#diagnostics) сервера.
 
 ### Возможности
 При запуске Расширенной проверки из контекстного меню проекта, в список ошибок добавляются ошибки, которые диагностирует BSL LS. При открытии ошибки открывается модуль с этой ошибкой.<br>
 При открытии любого модуля запускаются проверки модуля, которые предлагает BSL LS. После окончания проверок, список ошибок и предупреждений выводится в самом модуле.<br>
-Игнорируются проверки с критичностью CODE_SMELL.INFO. 
+Реализована функция быстрого исправления для диагностик, которые её поддерживают.
+
+### Игнорируемые диагностики
+Игнорируется диагностика UsingServiceTagDiagnostic.<br>
+Выключены диагностики, проверки которых совпадают с проверками EDT:
+* FunctionShouldHaveReturnDiagnostic
+* ParseErrorDiagnostic
+* ProcedureReturnsValueDiagnostic
+* UnknownPreprocessorSymbolDiagnostic
+
+### Демонстрация
+Расширение, в котором можно посмотреть работу всех диагностик можно скачать [здесь](https://github.com/DoublesunRUS/ru.capralow.dt.bslls.validator/tree/master/BSLLanguageServer)<br>
+Видео, в котором показано как работают быстрые исправления, можно посмотреть [здесь](https://youtu.be/ZDWEpOw27-k)
