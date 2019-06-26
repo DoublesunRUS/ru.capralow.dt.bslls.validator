@@ -17,9 +17,10 @@ import org.eclipse.xtext.nodemodel.ICompositeNode;
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils;
 import org.eclipse.xtext.resource.EObjectAtOffsetHelper;
 import org.eclipse.xtext.resource.XtextResource;
+import org.eclipse.xtext.validation.Check;
+import org.eclipse.xtext.validation.CheckType;
 import org.github._1c_syntax.bsl.languageserver.configuration.LanguageServerConfiguration;
 import org.github._1c_syntax.bsl.languageserver.context.DocumentContext;
-import org.github._1c_syntax.bsl.languageserver.context.ServerContext;
 import org.github._1c_syntax.bsl.languageserver.diagnostics.BSLDiagnostic;
 import org.github._1c_syntax.bsl.languageserver.diagnostics.FunctionShouldHaveReturnDiagnostic;
 import org.github._1c_syntax.bsl.languageserver.diagnostics.ParseErrorDiagnostic;
@@ -36,8 +37,13 @@ import com._1c.g5.v8.dt.bsl.validation.IExternalBslValidator;
 
 public class BslValidator implements IExternalBslValidator {
 	private static final String[] EMPTY_ARRAY = {};
+	private static final String QUICKFIX_CODE = "bsl-language-server"; //$NON-NLS-1$
+
+	private static final Either<Boolean, Map<String, Object>> falseForLeft = Either.forLeft(false);
 
 	private DiagnosticProvider diagnosticProvider;
+	private Map<Class<? extends BSLDiagnostic>, QuickFixProvider> quickFixProviders;
+	private EObjectAtOffsetHelper eobjectOffsetHelper;
 
 	public BslValidator() {
 		super();
@@ -47,20 +53,21 @@ public class BslValidator implements IExternalBslValidator {
 		Map<String, Either<Boolean, Map<String, Object>>> diagnostics = new HashMap<>();
 
 		// CODE_SMELL.INFO
-		diagnostics.put(DiagnosticProvider.getDiagnosticCode(UsingServiceTagDiagnostic.class), Either.forLeft(false));
+		diagnostics.put(DiagnosticProvider.getDiagnosticCode(UsingServiceTagDiagnostic.class), falseForLeft);
 
 		// Есть в EDT
-		diagnostics.put(DiagnosticProvider.getDiagnosticCode(FunctionShouldHaveReturnDiagnostic.class),
-				Either.forLeft(false));
-		diagnostics.put(DiagnosticProvider.getDiagnosticCode(ParseErrorDiagnostic.class), Either.forLeft(false));
-		diagnostics.put(DiagnosticProvider.getDiagnosticCode(ProcedureReturnsValueDiagnostic.class),
-				Either.forLeft(false));
-		diagnostics.put(DiagnosticProvider.getDiagnosticCode(UnknownPreprocessorSymbolDiagnostic.class),
-				Either.forLeft(false));
+		diagnostics.put(DiagnosticProvider.getDiagnosticCode(FunctionShouldHaveReturnDiagnostic.class), falseForLeft);
+		diagnostics.put(DiagnosticProvider.getDiagnosticCode(ParseErrorDiagnostic.class), falseForLeft);
+		diagnostics.put(DiagnosticProvider.getDiagnosticCode(ProcedureReturnsValueDiagnostic.class), falseForLeft);
+		diagnostics.put(DiagnosticProvider.getDiagnosticCode(UnknownPreprocessorSymbolDiagnostic.class), falseForLeft);
 
 		configuration.setDiagnostics(diagnostics);
 
 		diagnosticProvider = new DiagnosticProvider(configuration);
+
+		quickFixProviders = new HashMap<>();
+
+		eobjectOffsetHelper = new EObjectAtOffsetHelper();
 	}
 
 	@Override
@@ -69,61 +76,9 @@ public class BslValidator implements IExternalBslValidator {
 	}
 
 	@Override
+	@Check(CheckType.EXPENSIVE)
 	public void validate(EObject object, CustomValidationMessageAcceptor messageAcceptor) {
-		Module module = (Module) object;
-		ICompositeNode node = NodeModelUtils.findActualNodeFor(module);
-
-		String objectUri = module.getUniqueName();
-		String objectText = node.getText();
-
-		Document doc = new Document(objectText);
-
-		ServerContext bslServerContext = new ServerContext();
-		bslServerContext.addDocument(objectUri, objectText);
-		DocumentContext documentContext = bslServerContext.getDocument(objectUri);
-		List<Diagnostic> diagnostics = diagnosticProvider.computeDiagnostics(documentContext);
-		for (Diagnostic diagnostic : diagnostics) {
-			Class<? extends BSLDiagnostic> bslDiagnosticClass = DiagnosticProvider.getBSLDiagnosticClass(diagnostic);
-			DiagnosticType diagnosticType = DiagnosticProvider.getDiagnosticType(bslDiagnosticClass);
-
-			Integer[] offsetAndLength = getOffsetAndLength(diagnostic.getRange(), doc);
-			Integer offset = offsetAndLength[0];
-			Integer length = offsetAndLength[1];
-
-			EObject diagnosticObject = new EObjectAtOffsetHelper()
-					.resolveContainedElementAt((XtextResource) object.eResource(), offset);
-			if (diagnosticObject == null)
-				diagnosticObject = object;
-
-			String[] issueData = getIssueData(diagnostic, bslDiagnosticClass, documentContext, doc);
-
-			if (diagnosticType.equals(DiagnosticType.ERROR) || diagnosticType.equals(DiagnosticType.VULNERABILITY)) {
-				if (issueData.length == 0)
-					messageAcceptor.acceptError(diagnostic.getMessage(), diagnosticObject, offset, length, ""); //$NON-NLS-1$
-
-				else
-					messageAcceptor.acceptError(diagnostic.getMessage(),
-							diagnosticObject,
-							offset,
-							length,
-							"bsl-language-server", //$NON-NLS-1$
-							issueData);
-
-			} else {
-				if (issueData.length == 0)
-					messageAcceptor.acceptWarning(diagnostic.getMessage(), diagnosticObject, offset, length, ""); //$NON-NLS-1$
-
-				else
-					messageAcceptor.acceptWarning(diagnostic.getMessage(),
-							diagnosticObject,
-							offset,
-							length,
-							"bsl-language-server", //$NON-NLS-1$
-							issueData);
-
-			}
-		}
-
+		validateModule(object, messageAcceptor);
 	}
 
 	private String[] getIssueData(Diagnostic diagnostic, Class<? extends BSLDiagnostic> bslDiagnosticClass,
@@ -131,8 +86,9 @@ public class BslValidator implements IExternalBslValidator {
 		if (documentContext == null || !QuickFixProvider.class.isAssignableFrom(bslDiagnosticClass))
 			return EMPTY_ARRAY;
 
-		QuickFixProvider diagnosticInstance = (QuickFixProvider) diagnosticProvider
-				.getDiagnosticInstance(bslDiagnosticClass);
+		QuickFixProvider diagnosticInstance = quickFixProviders.computeIfAbsent(bslDiagnosticClass,
+				k -> (QuickFixProvider) diagnosticProvider.getDiagnosticInstance(k));
+
 		List<CodeAction> quickFixes = diagnosticInstance.getQuickFixes(diagnostic, null, documentContext);
 
 		List<String> issueArray = new ArrayList<>();
@@ -187,6 +143,59 @@ public class BslValidator implements IExternalBslValidator {
 		result[1] = length;
 
 		return result;
+	}
+
+	private void registerIssue(EObject object, CustomValidationMessageAcceptor messageAcceptor, Diagnostic diagnostic,
+			XtextResource eobjectResource, DocumentContext documentContext, Document doc) {
+		Class<? extends BSLDiagnostic> bslDiagnosticClass = DiagnosticProvider.getBSLDiagnosticClass(diagnostic);
+
+		Integer[] offsetAndLength = getOffsetAndLength(diagnostic.getRange(), doc);
+		Integer offset = offsetAndLength[0];
+		Integer length = offsetAndLength[1];
+
+		EObject diagnosticObject = eobjectOffsetHelper.resolveContainedElementAt(eobjectResource, offset);
+		if (diagnosticObject == null)
+			diagnosticObject = object;
+
+		String[] issueData = getIssueData(diagnostic, bslDiagnosticClass, documentContext, doc);
+
+		DiagnosticType diagnosticType = DiagnosticProvider.getDiagnosticType(bslDiagnosticClass);
+		if (diagnosticType.equals(DiagnosticType.ERROR) || diagnosticType.equals(DiagnosticType.VULNERABILITY)) {
+			if (issueData.length == 0)
+				messageAcceptor.acceptError(diagnostic.getMessage(), diagnosticObject, offset, length, ""); //$NON-NLS-1$
+
+			else
+				messageAcceptor.acceptError(diagnostic
+						.getMessage(), diagnosticObject, offset, length, QUICKFIX_CODE, issueData);
+
+		} else {
+			if (issueData.length == 0)
+				messageAcceptor.acceptWarning(diagnostic.getMessage(), diagnosticObject, offset, length, ""); //$NON-NLS-1$
+
+			else
+				messageAcceptor.acceptWarning(diagnostic
+						.getMessage(), diagnosticObject, offset, length, QUICKFIX_CODE, issueData);
+
+		}
+	}
+
+	private void validateModule(EObject object, CustomValidationMessageAcceptor messageAcceptor) {
+		XtextResource eobjectResource = (XtextResource) object.eResource();
+
+		Module module = (Module) object;
+		ICompositeNode node = NodeModelUtils.findActualNodeFor(module);
+		String objectUri = module.getUniqueName();
+		String objectText = node.getText();
+
+		Document doc = new Document(objectText);
+
+		BslValidatorPlugin.log(BslValidatorPlugin.createInfoStatus("Начало передачи текста модуля в BSL LS")); //$NON-NLS-1$
+		DocumentContext documentContext = new DocumentContext(objectUri, objectText);
+		BslValidatorPlugin.log(BslValidatorPlugin.createInfoStatus("Окончание передачи текста модуля в BSL LS")); //$NON-NLS-1$
+
+		List<Diagnostic> diagnostics = diagnosticProvider.computeDiagnostics(documentContext);
+		for (Diagnostic diagnostic : diagnostics)
+			registerIssue(object, messageAcceptor, diagnostic, eobjectResource, documentContext, doc);
 	}
 
 }

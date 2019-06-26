@@ -25,6 +25,10 @@ public class BslValidatorPlugin extends AbstractUIPlugin {
 		return new Status(IStatus.ERROR, ID, 0, message, throwable);
 	}
 
+	public static IStatus createInfoStatus(String message) {
+		return new Status(IStatus.INFO, ID, 0, message, (Throwable) null);
+	}
+
 	public static BslValidatorPlugin getDefault() {
 		return plugin;
 	}
