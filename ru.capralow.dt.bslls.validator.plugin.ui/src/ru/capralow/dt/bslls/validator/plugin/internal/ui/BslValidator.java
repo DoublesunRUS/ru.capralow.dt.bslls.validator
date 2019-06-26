@@ -21,6 +21,7 @@ import org.eclipse.xtext.validation.Check;
 import org.eclipse.xtext.validation.CheckType;
 import org.github._1c_syntax.bsl.languageserver.configuration.LanguageServerConfiguration;
 import org.github._1c_syntax.bsl.languageserver.context.DocumentContext;
+import org.github._1c_syntax.bsl.languageserver.context.ServerContext;
 import org.github._1c_syntax.bsl.languageserver.diagnostics.BSLDiagnostic;
 import org.github._1c_syntax.bsl.languageserver.diagnostics.FunctionShouldHaveReturnDiagnostic;
 import org.github._1c_syntax.bsl.languageserver.diagnostics.ParseErrorDiagnostic;
@@ -43,6 +44,7 @@ public class BslValidator implements IExternalBslValidator {
 
 	private DiagnosticProvider diagnosticProvider;
 	private Map<Class<? extends BSLDiagnostic>, QuickFixProvider> quickFixProviders;
+	private ServerContext bslServerContext;
 	private EObjectAtOffsetHelper eobjectOffsetHelper;
 
 	public BslValidator() {
@@ -64,9 +66,8 @@ public class BslValidator implements IExternalBslValidator {
 		configuration.setDiagnostics(diagnostics);
 
 		diagnosticProvider = new DiagnosticProvider(configuration);
-
 		quickFixProviders = new HashMap<>();
-
+		bslServerContext = new ServerContext();
 		eobjectOffsetHelper = new EObjectAtOffsetHelper();
 	}
 
@@ -190,7 +191,7 @@ public class BslValidator implements IExternalBslValidator {
 		Document doc = new Document(objectText);
 
 		BslValidatorPlugin.log(BslValidatorPlugin.createInfoStatus("Начало передачи текста модуля в BSL LS")); //$NON-NLS-1$
-		DocumentContext documentContext = new DocumentContext(objectUri, objectText);
+		DocumentContext documentContext = bslServerContext.addDocument(objectUri, objectText);
 		BslValidatorPlugin.log(BslValidatorPlugin.createInfoStatus("Окончание передачи текста модуля в BSL LS")); //$NON-NLS-1$
 
 		List<Diagnostic> diagnostics = diagnosticProvider.computeDiagnostics(documentContext);
