@@ -39,12 +39,14 @@ import com._1c.g5.v8.dt.bsl.validation.IExternalBslValidator;
 public class BslValidator implements IExternalBslValidator {
 	private static final String[] EMPTY_ARRAY = {};
 	private static final String QUICKFIX_CODE = "bsl-language-server"; //$NON-NLS-1$
+	private static final String BSL_LS_PREFIX = "[BSL LS] "; //$NON-NLS-1$
 
 	private static final Either<Boolean, Map<String, Object>> falseForLeft = Either.forLeft(false);
 
 	private DiagnosticProvider diagnosticProvider;
 	private Map<Class<? extends BSLDiagnostic>, QuickFixProvider> quickFixProviders;
 	private ServerContext bslServerContext;
+
 	private EObjectAtOffsetHelper eobjectOffsetHelper;
 
 	public BslValidator() {
@@ -105,7 +107,7 @@ public class BslValidator implements IExternalBslValidator {
 			Integer length = offsetAndLength[1];
 
 			List<String> issueLine = new ArrayList<>();
-			issueLine.add(quickFix.getTitle());
+			issueLine.add(BSL_LS_PREFIX.concat(quickFix.getTitle()));
 			issueLine.add(diagnostic.getMessage());
 			issueLine.add(offset.toString());
 			issueLine.add(length.toString());
@@ -160,22 +162,24 @@ public class BslValidator implements IExternalBslValidator {
 
 		String[] issueData = getIssueData(diagnostic, bslDiagnosticClass, documentContext, doc);
 
+		String diagnosticMessage = BSL_LS_PREFIX.concat(diagnostic.getMessage());
+
 		DiagnosticType diagnosticType = DiagnosticProvider.getDiagnosticType(bslDiagnosticClass);
 		if (diagnosticType.equals(DiagnosticType.ERROR) || diagnosticType.equals(DiagnosticType.VULNERABILITY)) {
 			if (issueData.length == 0)
-				messageAcceptor.acceptError(diagnostic.getMessage(), diagnosticObject, offset, length, ""); //$NON-NLS-1$
+				messageAcceptor.acceptError(diagnosticMessage, diagnosticObject, offset, length, ""); //$NON-NLS-1$
 
 			else
-				messageAcceptor.acceptError(diagnostic
-						.getMessage(), diagnosticObject, offset, length, QUICKFIX_CODE, issueData);
+				messageAcceptor
+						.acceptError(diagnosticMessage, diagnosticObject, offset, length, QUICKFIX_CODE, issueData);
 
 		} else {
 			if (issueData.length == 0)
-				messageAcceptor.acceptWarning(diagnostic.getMessage(), diagnosticObject, offset, length, ""); //$NON-NLS-1$
+				messageAcceptor.acceptWarning(diagnosticMessage, diagnosticObject, offset, length, ""); //$NON-NLS-1$
 
 			else
-				messageAcceptor.acceptWarning(diagnostic
-						.getMessage(), diagnosticObject, offset, length, QUICKFIX_CODE, issueData);
+				messageAcceptor
+						.acceptWarning(diagnosticMessage, diagnosticObject, offset, length, QUICKFIX_CODE, issueData);
 
 		}
 	}
