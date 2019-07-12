@@ -1,10 +1,13 @@
 package ru.capralow.dt.bslls.validator.plugin.internal.ui;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
@@ -31,6 +34,7 @@ import org.github._1c_syntax.bsl.languageserver.diagnostics.UnknownPreprocessorS
 import org.github._1c_syntax.bsl.languageserver.diagnostics.UsingServiceTagDiagnostic;
 import org.github._1c_syntax.bsl.languageserver.diagnostics.metadata.DiagnosticType;
 import org.github._1c_syntax.bsl.languageserver.providers.DiagnosticProvider;
+import org.osgi.framework.Bundle;
 
 import com._1c.g5.v8.dt.bsl.model.Module;
 import com._1c.g5.v8.dt.bsl.validation.CustomValidationMessageAcceptor;
@@ -43,8 +47,14 @@ public class BslValidator implements IExternalBslValidator {
 
 	private static final Either<Boolean, Map<String, Object>> falseForLeft = Either.forLeft(false);
 
+	private static IPath getConfigurationFilePath() {
+		Bundle bundle = Platform.getBundle(BslValidatorPlugin.ID);
+		return Platform.getStateLocation(bundle);
+	}
+
 	private DiagnosticProvider diagnosticProvider;
 	private Map<Class<? extends BSLDiagnostic>, QuickFixProvider> quickFixProviders;
+
 	private ServerContext bslServerContext;
 
 	private EObjectAtOffsetHelper eobjectOffsetHelper;
@@ -52,11 +62,14 @@ public class BslValidator implements IExternalBslValidator {
 	public BslValidator() {
 		super();
 
-		LanguageServerConfiguration configuration = LanguageServerConfiguration.create();
+		File configurationFile = new File(getConfigurationFilePath() + File.separator + "bsl-language-server.json"); //$NON-NLS-1$
+		LanguageServerConfiguration configuration = LanguageServerConfiguration.create(configurationFile);
 
-		Map<String, Either<Boolean, Map<String, Object>>> diagnostics = new HashMap<>();
+		Map<String, Either<Boolean, Map<String, Object>>> diagnostics = configuration.getDiagnostics();
+		if (diagnostics == null)
+			diagnostics = new HashMap<>();
 
-		// CODE_SMELL.INFO
+		// В EDT свой механизм работы с тегами
 		diagnostics.put(DiagnosticProvider.getDiagnosticCode(UsingServiceTagDiagnostic.class), falseForLeft);
 
 		// Есть в EDT
