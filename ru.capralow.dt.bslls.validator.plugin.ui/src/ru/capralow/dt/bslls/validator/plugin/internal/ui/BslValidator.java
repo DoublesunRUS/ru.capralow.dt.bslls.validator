@@ -27,6 +27,7 @@ import org.github._1c_syntax.bsl.languageserver.context.DocumentContext;
 import org.github._1c_syntax.bsl.languageserver.context.ServerContext;
 import org.github._1c_syntax.bsl.languageserver.diagnostics.BSLDiagnostic;
 import org.github._1c_syntax.bsl.languageserver.diagnostics.FunctionShouldHaveReturnDiagnostic;
+import org.github._1c_syntax.bsl.languageserver.diagnostics.LineLengthDiagnostic;
 import org.github._1c_syntax.bsl.languageserver.diagnostics.ParseErrorDiagnostic;
 import org.github._1c_syntax.bsl.languageserver.diagnostics.ProcedureReturnsValueDiagnostic;
 import org.github._1c_syntax.bsl.languageserver.diagnostics.QuickFixProvider;
@@ -71,6 +72,9 @@ public class BslValidator implements IExternalBslValidator {
 
 		// В EDT свой механизм работы с тегами
 		diagnostics.put(DiagnosticProvider.getDiagnosticCode(UsingServiceTagDiagnostic.class), falseForLeft);
+
+		// В EDT контроль длины строки включается своим механизмом
+		diagnostics.put(DiagnosticProvider.getDiagnosticCode(LineLengthDiagnostic.class), falseForLeft);
 
 		// Есть в EDT
 		diagnostics.put(DiagnosticProvider.getDiagnosticCode(FunctionShouldHaveReturnDiagnostic.class), falseForLeft);
