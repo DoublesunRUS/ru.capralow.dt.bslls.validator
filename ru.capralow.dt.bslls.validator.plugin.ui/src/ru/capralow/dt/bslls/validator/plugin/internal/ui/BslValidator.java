@@ -62,7 +62,7 @@ public class BslValidator implements IExternalBslValidator {
 	public BslValidator() {
 		super();
 
-		File configurationFile = new File(getConfigurationFilePath() + File.separator + "bsl-language-server.json"); //$NON-NLS-1$
+		File configurationFile = new File(getConfigurationFilePath() + File.separator + ".bsl-language-server.json"); //$NON-NLS-1$
 		LanguageServerConfiguration configuration = LanguageServerConfiguration.create(configurationFile);
 
 		Map<String, Either<Boolean, Map<String, Object>>> diagnostics = configuration.getDiagnostics();
