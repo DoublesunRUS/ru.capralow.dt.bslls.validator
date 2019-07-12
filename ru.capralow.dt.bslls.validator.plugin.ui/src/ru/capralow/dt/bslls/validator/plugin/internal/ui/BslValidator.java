@@ -211,9 +211,14 @@ public class BslValidator implements IExternalBslValidator {
 
 		Document doc = new Document(objectText);
 
-		BslValidatorPlugin.log(BslValidatorPlugin.createInfoStatus("Начало передачи текста модуля в BSL LS")); //$NON-NLS-1$
+		long startTime = System.currentTimeMillis();
+		BslValidatorPlugin
+				.log(BslValidatorPlugin.createInfoStatus(BSL_LS_PREFIX.concat("Начало передачи текста модуля"))); //$NON-NLS-1$
 		DocumentContext documentContext = bslServerContext.addDocument(objectUri, objectText);
-		BslValidatorPlugin.log(BslValidatorPlugin.createInfoStatus("Окончание передачи текста модуля в BSL LS")); //$NON-NLS-1$
+		long endTime = System.currentTimeMillis();
+		String difference = " (".concat(Long.toString((endTime - startTime) / 1000)).concat("s)"); //$NON-NLS-1$ //$NON-NLS-2$
+		BslValidatorPlugin.log(BslValidatorPlugin
+				.createInfoStatus(BSL_LS_PREFIX.concat("Окончание передачи текста модуля").concat(difference))); //$NON-NLS-1$
 
 		List<Diagnostic> diagnostics = diagnosticProvider.computeDiagnostics(documentContext);
 		for (Diagnostic diagnostic : diagnostics)
