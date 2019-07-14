@@ -2,6 +2,7 @@ package ru.capralow.dt.bslls.validator.plugin.internal.ui;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +43,6 @@ import com._1c.g5.v8.dt.bsl.validation.CustomValidationMessageAcceptor;
 import com._1c.g5.v8.dt.bsl.validation.IExternalBslValidator;
 
 public class BslValidator implements IExternalBslValidator {
-	private static final String[] EMPTY_ARRAY = {};
 	private static final String QUICKFIX_CODE = "bsl-language-server"; //$NON-NLS-1$
 	private static final String BSL_LS_PREFIX = "[BSL LS] "; //$NON-NLS-1$
 
@@ -58,7 +58,7 @@ public class BslValidator implements IExternalBslValidator {
 
 	private ServerContext bslServerContext;
 
-	private EObjectAtOffsetHelper eobjectOffsetHelper;
+	private EObjectAtOffsetHelper eObjectOffsetHelper;
 
 	public BslValidator() {
 		super();
@@ -70,15 +70,13 @@ public class BslValidator implements IExternalBslValidator {
 		if (diagnostics == null)
 			diagnostics = new HashMap<>();
 
-		// В EDT свой механизм работы с тегами
+		// Свои механизмы в EDT
+		diagnostics.put(DiagnosticProvider.getDiagnosticCode(LineLengthDiagnostic.class), falseForLeft);
+		diagnostics.put(DiagnosticProvider.getDiagnosticCode(ParseErrorDiagnostic.class), falseForLeft);
 		diagnostics.put(DiagnosticProvider.getDiagnosticCode(UsingServiceTagDiagnostic.class), falseForLeft);
 
-		// В EDT контроль длины строки включается своим механизмом
-		diagnostics.put(DiagnosticProvider.getDiagnosticCode(LineLengthDiagnostic.class), falseForLeft);
-
-		// Есть в EDT
+		// Диагностики есть в EDT
 		diagnostics.put(DiagnosticProvider.getDiagnosticCode(FunctionShouldHaveReturnDiagnostic.class), falseForLeft);
-		diagnostics.put(DiagnosticProvider.getDiagnosticCode(ParseErrorDiagnostic.class), falseForLeft);
 		diagnostics.put(DiagnosticProvider.getDiagnosticCode(ProcedureReturnsValueDiagnostic.class), falseForLeft);
 		diagnostics.put(DiagnosticProvider.getDiagnosticCode(UnknownPreprocessorSymbolDiagnostic.class), falseForLeft);
 
@@ -87,7 +85,7 @@ public class BslValidator implements IExternalBslValidator {
 		diagnosticProvider = new DiagnosticProvider(configuration);
 		quickFixProviders = new HashMap<>();
 		bslServerContext = new ServerContext();
-		eobjectOffsetHelper = new EObjectAtOffsetHelper();
+		eObjectOffsetHelper = new EObjectAtOffsetHelper();
 	}
 
 	@Override
@@ -101,19 +99,18 @@ public class BslValidator implements IExternalBslValidator {
 		validateModule(object, messageAcceptor);
 	}
 
-	private String[] getIssueData(Diagnostic diagnostic, Class<? extends BSLDiagnostic> bslDiagnosticClass,
+	private StringBuilder getIssueData(Diagnostic diagnostic, Class<? extends BSLDiagnostic> bslDiagnosticClass,
 			DocumentContext documentContext, Document doc) {
+		StringBuilder issueData = new StringBuilder();
+
 		if (documentContext == null || !QuickFixProvider.class.isAssignableFrom(bslDiagnosticClass))
-			return EMPTY_ARRAY;
+			return issueData;
 
 		QuickFixProvider diagnosticInstance = quickFixProviders.computeIfAbsent(bslDiagnosticClass,
 				k -> (QuickFixProvider) diagnosticProvider.getDiagnosticInstance(k));
 
-		List<Diagnostic> diagnosticSingletonList = new ArrayList<>();
-		diagnosticSingletonList.add(diagnostic);
-		List<CodeAction> quickFixes = diagnosticInstance.getQuickFixes(diagnosticSingletonList, null, documentContext);
-
-		List<String> issueArray = new ArrayList<>();
+		List<CodeAction> quickFixes = diagnosticInstance
+				.getQuickFixes(Collections.singletonList(diagnostic), null, documentContext);
 
 		for (CodeAction quickFix : quickFixes) {
 			List<TextEdit> changes = quickFix.getEdit().getChanges().get(documentContext.getUri());
@@ -132,15 +129,10 @@ public class BslValidator implements IExternalBslValidator {
 			issueLine.add(length.toString());
 			issueLine.add(change.getNewText());
 
-			issueArray.add(String.join(",", issueLine)); //$NON-NLS-1$
+			if (issueData.length() != 0)
+				issueData.append(System.lineSeparator());
+			issueData.append(String.join(",", issueLine)); //$NON-NLS-1$
 		}
-
-		if (issueArray.isEmpty())
-			return EMPTY_ARRAY;
-
-		String[] issueData = new String[issueArray.size()];
-		for (String element : issueArray)
-			issueData[issueArray.indexOf(element)] = element;
 
 		return issueData;
 
@@ -175,32 +167,31 @@ public class BslValidator implements IExternalBslValidator {
 		Integer offset = offsetAndLength[0];
 		Integer length = offsetAndLength[1];
 
-		EObject diagnosticObject = eobjectOffsetHelper.resolveContainedElementAt(eobjectResource, offset);
+		EObject diagnosticObject = eObjectOffsetHelper.resolveContainedElementAt(eobjectResource, offset);
 		if (diagnosticObject == null)
 			diagnosticObject = object;
 
-		String[] issueData = getIssueData(diagnostic, bslDiagnosticClass, documentContext, doc);
+		StringBuilder issueData = getIssueData(diagnostic, bslDiagnosticClass, documentContext, doc);
 
 		String diagnosticMessage = BSL_LS_PREFIX.concat(diagnostic.getMessage());
 
 		DiagnosticType diagnosticType = DiagnosticProvider.getDiagnosticType(bslDiagnosticClass);
-		if (diagnosticType.equals(DiagnosticType.ERROR) || diagnosticType.equals(DiagnosticType.VULNERABILITY)) {
-			if (issueData.length == 0)
-				messageAcceptor.acceptError(diagnosticMessage, diagnosticObject, offset, length, ""); //$NON-NLS-1$
+		if (diagnosticType.equals(DiagnosticType.ERROR) || diagnosticType.equals(DiagnosticType.VULNERABILITY))
+			messageAcceptor.acceptError(diagnosticMessage,
+					diagnosticObject,
+					offset,
+					length,
+					QUICKFIX_CODE,
+					issueData.toString());
 
-			else
-				messageAcceptor
-						.acceptError(diagnosticMessage, diagnosticObject, offset, length, QUICKFIX_CODE, issueData);
+		else
+			messageAcceptor.acceptWarning(diagnosticMessage,
+					diagnosticObject,
+					offset,
+					length,
+					QUICKFIX_CODE,
+					issueData.toString());
 
-		} else {
-			if (issueData.length == 0)
-				messageAcceptor.acceptWarning(diagnosticMessage, diagnosticObject, offset, length, ""); //$NON-NLS-1$
-
-			else
-				messageAcceptor
-						.acceptWarning(diagnosticMessage, diagnosticObject, offset, length, QUICKFIX_CODE, issueData);
-
-		}
 	}
 
 	private void validateModule(EObject object, CustomValidationMessageAcceptor messageAcceptor) {
