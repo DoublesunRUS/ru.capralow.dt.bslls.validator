@@ -109,7 +109,9 @@ public class BslValidator implements IExternalBslValidator {
 		QuickFixProvider diagnosticInstance = quickFixProviders.computeIfAbsent(bslDiagnosticClass,
 				k -> (QuickFixProvider) diagnosticProvider.getDiagnosticInstance(k));
 
-		List<CodeAction> quickFixes = diagnosticInstance.getQuickFixes(diagnostic, null, documentContext);
+		List<Diagnostic> diagnosticSingletonList = new ArrayList<>();
+		diagnosticSingletonList.add(diagnostic);
+		List<CodeAction> quickFixes = diagnosticInstance.getQuickFixes(diagnosticSingletonList, null, documentContext);
 
 		List<String> issueArray = new ArrayList<>();
 
@@ -202,7 +204,7 @@ public class BslValidator implements IExternalBslValidator {
 	}
 
 	private void validateModule(EObject object, CustomValidationMessageAcceptor messageAcceptor) {
-		XtextResource eobjectResource = (XtextResource) object.eResource();
+		XtextResource eObjectResource = (XtextResource) object.eResource();
 
 		Module module = (Module) object;
 		ICompositeNode node = NodeModelUtils.findActualNodeFor(module);
@@ -222,7 +224,7 @@ public class BslValidator implements IExternalBslValidator {
 
 		List<Diagnostic> diagnostics = diagnosticProvider.computeDiagnostics(documentContext);
 		for (Diagnostic diagnostic : diagnostics)
-			registerIssue(object, messageAcceptor, diagnostic, eobjectResource, documentContext, doc);
+			registerIssue(object, messageAcceptor, diagnostic, eObjectResource, documentContext, doc);
 	}
 
 }
