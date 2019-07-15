@@ -21,8 +21,6 @@ import org.eclipse.xtext.nodemodel.ICompositeNode;
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils;
 import org.eclipse.xtext.resource.EObjectAtOffsetHelper;
 import org.eclipse.xtext.resource.XtextResource;
-import org.eclipse.xtext.validation.Check;
-import org.eclipse.xtext.validation.CheckType;
 import org.github._1c_syntax.bsl.languageserver.configuration.LanguageServerConfiguration;
 import org.github._1c_syntax.bsl.languageserver.context.DocumentContext;
 import org.github._1c_syntax.bsl.languageserver.context.ServerContext;
@@ -94,7 +92,6 @@ public class BslValidator implements IExternalBslValidator {
 	}
 
 	@Override
-	@Check(CheckType.EXPENSIVE)
 	public void validate(EObject object, CustomValidationMessageAcceptor messageAcceptor) {
 		validateModule(object, messageAcceptor);
 	}
