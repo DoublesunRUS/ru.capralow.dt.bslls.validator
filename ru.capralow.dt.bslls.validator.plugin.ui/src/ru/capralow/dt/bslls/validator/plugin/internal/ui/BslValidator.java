@@ -51,7 +51,29 @@ public class BslValidator implements IExternalBslValidator {
 		return Platform.getStateLocation(bundle);
 	}
 
+	private static Integer[] getOffsetAndLength(Range range, Document doc) {
+		Integer offset = 0;
+		Integer length = 0;
+		try {
+			offset = doc.getLineOffset(range.getStart().getLine()) + range.getStart().getCharacter();
+			Integer endOffset = doc.getLineOffset(range.getEnd().getLine()) + range.getEnd().getCharacter();
+			length = endOffset - offset;
+
+		} catch (BadLocationException e) {
+			BslValidatorPlugin
+					.log(BslValidatorPlugin.createErrorStatus(Messages.BslValidator_Bad_Location_Exception, e));
+
+		}
+
+		Integer[] result = new Integer[2];
+		result[0] = offset;
+		result[1] = length;
+
+		return result;
+	}
+
 	private DiagnosticProvider diagnosticProvider;
+
 	private Map<Class<? extends BSLDiagnostic>, QuickFixProvider> quickFixProviders;
 
 	private ServerContext bslServerContext;
@@ -133,27 +155,6 @@ public class BslValidator implements IExternalBslValidator {
 
 		return issueData;
 
-	}
-
-	private Integer[] getOffsetAndLength(Range range, Document doc) {
-		Integer offset = 0;
-		Integer length = 0;
-		try {
-			offset = doc.getLineOffset(range.getStart().getLine()) + range.getStart().getCharacter();
-			Integer endOffset = doc.getLineOffset(range.getEnd().getLine()) + range.getEnd().getCharacter();
-			length = endOffset - offset;
-
-		} catch (BadLocationException e) {
-			BslValidatorPlugin
-					.log(BslValidatorPlugin.createErrorStatus(Messages.BslValidator_Bad_Location_Exception, e));
-
-		}
-
-		Integer[] result = new Integer[2];
-		result[0] = offset;
-		result[1] = length;
-
-		return result;
 	}
 
 	private void registerIssue(EObject object, CustomValidationMessageAcceptor messageAcceptor, Diagnostic diagnostic,
