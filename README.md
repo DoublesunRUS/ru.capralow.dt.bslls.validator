@@ -30,6 +30,7 @@
 * LineLengthDiagnostic
 * ParseErrorDiagnostic
 * UsingServiceTagDiagnostic
+
 Диагностики есть в EDT:
 * FunctionShouldHaveReturnDiagnostic
 * ProcedureReturnsValueDiagnostic
