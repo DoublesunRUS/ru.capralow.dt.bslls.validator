@@ -2,6 +2,7 @@ package ru.capralow.dt.bslls.validator.plugin.internal.ui;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -90,15 +91,24 @@ public class BslValidator implements IExternalBslValidator {
 		if (diagnostics == null)
 			diagnostics = new HashMap<>();
 
+		Collection<Class<? extends BSLDiagnostic>> duplicateDiagnostics = new ArrayList<>();
+
 		// Свои механизмы в EDT
-		diagnostics.put(DiagnosticProvider.getDiagnosticCode(LineLengthDiagnostic.class), falseForLeft);
-		diagnostics.put(DiagnosticProvider.getDiagnosticCode(ParseErrorDiagnostic.class), falseForLeft);
-		diagnostics.put(DiagnosticProvider.getDiagnosticCode(UsingServiceTagDiagnostic.class), falseForLeft);
+		duplicateDiagnostics.add(LineLengthDiagnostic.class);
+		duplicateDiagnostics.add(ParseErrorDiagnostic.class);
+		duplicateDiagnostics.add(UsingServiceTagDiagnostic.class);
 
 		// Диагностики есть в EDT
-		diagnostics.put(DiagnosticProvider.getDiagnosticCode(FunctionShouldHaveReturnDiagnostic.class), falseForLeft);
-		diagnostics.put(DiagnosticProvider.getDiagnosticCode(ProcedureReturnsValueDiagnostic.class), falseForLeft);
-		diagnostics.put(DiagnosticProvider.getDiagnosticCode(UnknownPreprocessorSymbolDiagnostic.class), falseForLeft);
+		duplicateDiagnostics.add(FunctionShouldHaveReturnDiagnostic.class);
+		duplicateDiagnostics.add(ProcedureReturnsValueDiagnostic.class);
+		duplicateDiagnostics.add(UnknownPreprocessorSymbolDiagnostic.class);
+
+		// В настройках можно принудительно включить выключенные диагностики
+		for (Class<? extends BSLDiagnostic> diagnostic : duplicateDiagnostics) {
+			String diagnocticCode = DiagnosticProvider.getDiagnosticCode(diagnostic);
+			if (!diagnostics.containsKey(diagnocticCode))
+				diagnostics.put(diagnocticCode, falseForLeft);
+		}
 
 		configuration.setDiagnostics(diagnostics);
 
