@@ -22,6 +22,7 @@ import org.eclipse.xtext.nodemodel.ICompositeNode;
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils;
 import org.eclipse.xtext.resource.EObjectAtOffsetHelper;
 import org.eclipse.xtext.resource.XtextResource;
+import org.eclipse.xtext.util.CancelIndicator;
 import org.github._1c_syntax.bsl.languageserver.configuration.LanguageServerConfiguration;
 import org.github._1c_syntax.bsl.languageserver.context.DocumentContext;
 import org.github._1c_syntax.bsl.languageserver.context.ServerContext;
@@ -38,6 +39,7 @@ import org.github._1c_syntax.bsl.languageserver.providers.DiagnosticProvider;
 import org.osgi.framework.Bundle;
 
 import com._1c.g5.v8.dt.bsl.model.Module;
+import com._1c.g5.v8.dt.bsl.resource.BslResource;
 import com._1c.g5.v8.dt.bsl.validation.CustomValidationMessageAcceptor;
 import com._1c.g5.v8.dt.bsl.validation.IExternalBslValidator;
 
@@ -120,12 +122,20 @@ public class BslValidator implements IExternalBslValidator {
 
 	@Override
 	public boolean needValidation(EObject object) {
-		return object instanceof Module;
+		if (!(object instanceof Module))
+			return false;
+
+		boolean isDeepAnalysing = ((BslResource) ((Module) object).eResource()).isDeepAnalysing();
+
+		if (!isDeepAnalysing)
+			bslServerContext = new ServerContext();
+
+		return isDeepAnalysing;
 	}
 
 	@Override
-	public void validate(EObject object, CustomValidationMessageAcceptor messageAcceptor) {
-		validateModule(object, messageAcceptor);
+	public void validate(EObject object, CustomValidationMessageAcceptor messageAcceptor, CancelIndicator monitor) {
+		validateModule(object, messageAcceptor, monitor);
 	}
 
 	private StringBuilder getIssueData(Diagnostic diagnostic, Class<? extends BSLDiagnostic> bslDiagnosticClass,
@@ -202,7 +212,11 @@ public class BslValidator implements IExternalBslValidator {
 
 	}
 
-	private void validateModule(EObject object, CustomValidationMessageAcceptor messageAcceptor) {
+	private void validateModule(EObject object, CustomValidationMessageAcceptor messageAcceptor,
+			CancelIndicator monitor) {
+		if (monitor.isCanceled())
+			return;
+
 		XtextResource eObjectResource = (XtextResource) object.eResource();
 
 		Module module = (Module) object;
