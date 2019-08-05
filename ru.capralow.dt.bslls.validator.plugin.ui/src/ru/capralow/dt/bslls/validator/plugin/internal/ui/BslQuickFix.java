@@ -14,6 +14,9 @@ public class BslQuickFix extends AbstractExternalQuickfixProvider {
 	public void processBslLanguageServerDiagnostic(final Issue issue, final IssueResolutionAcceptor acceptor) {
 		String[] issueData = issue.getData();
 		for (String issueLine : issueData) {
+			if (issueLine.isEmpty())
+				continue;
+
 			String[] issueList = issueLine.split("[,]"); //$NON-NLS-1$
 
 			String issueCommand = issueList[0];
