@@ -151,13 +151,14 @@ public class BslValidator implements IExternalBslValidator {
 		List<CodeAction> quickFixes = diagnosticInstance
 				.getQuickFixes(Collections.singletonList(diagnostic), null, documentContext);
 
+		Integer[] offsetAndLength = getOffsetAndLength(diagnostic.getRange(), doc);
+
 		for (CodeAction quickFix : quickFixes) {
 			List<TextEdit> changes = quickFix.getEdit().getChanges().get(documentContext.getUri());
 			if (changes.size() != 1)
 				continue;
 
 			TextEdit change = changes.get(0);
-			Integer[] offsetAndLength = getOffsetAndLength(change.getRange(), doc);
 			Integer offset = offsetAndLength[0];
 			Integer length = offsetAndLength[1];
 
