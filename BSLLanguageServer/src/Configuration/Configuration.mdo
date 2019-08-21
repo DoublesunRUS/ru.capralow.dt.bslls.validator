@@ -52,4 +52,5 @@
     <languageCode>ru</languageCode>
   </languages>
   <commonModules>CommonModule.BSLLS_Диагностики</commonModules>
+  <catalogs>Catalog.МойСправочник</catalogs>
 </mdclass:Configuration>
