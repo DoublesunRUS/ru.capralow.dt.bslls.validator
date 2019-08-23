@@ -15,7 +15,7 @@
 
 ### BSL Language Server
 Плагин использует [BSL Language Server](https://github.com/1c-syntax/bsl-language-server) в соответствии с [лицензией](https://github.com/1c-syntax/bsl-language-server/blob/develop/COPYING.md).<br>
-В состав плагина включена версия 0.10.0<br>
+В состав плагина включена версия 0.10.1<br>
 Список диагностик можно посмотреть на [официальном сайте](https://1c-syntax.github.io/bsl-language-server/#diagnostics) сервера.
 
 ### Возможности
