@@ -27,14 +27,14 @@
 
 ### Игнорируемые диагностики
 Свои механизмы в EDT:<br>
-* LineLengthDiagnostic
-* ParseErrorDiagnostic
-* UsingServiceTagDiagnostic
+* LineLength
+* ParseError
+* UsingServiceTag
 
 Диагностики есть в EDT:
-* FunctionShouldHaveReturnDiagnostic
-* ProcedureReturnsValueDiagnostic
-* UnknownPreprocessorSymbolDiagnostic
+* FunctionShouldHaveReturn
+* ProcedureReturnsValue
+* UnknownPreprocessorSymbol
 
 ### Демонстрация
 Расширение, в котором можно посмотреть работу всех диагностик можно скачать [здесь](https://github.com/DoublesunRUS/ru.capralow.dt.bslls.validator/tree/master/BSLLanguageServer)<br>
