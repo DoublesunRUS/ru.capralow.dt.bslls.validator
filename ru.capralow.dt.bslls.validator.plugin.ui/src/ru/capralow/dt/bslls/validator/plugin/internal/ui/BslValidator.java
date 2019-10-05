@@ -23,25 +23,26 @@ import org.eclipse.xtext.nodemodel.util.NodeModelUtils;
 import org.eclipse.xtext.resource.EObjectAtOffsetHelper;
 import org.eclipse.xtext.resource.XtextResource;
 import org.eclipse.xtext.util.CancelIndicator;
-import org.github._1c_syntax.bsl.languageserver.configuration.LanguageServerConfiguration;
-import org.github._1c_syntax.bsl.languageserver.context.DocumentContext;
-import org.github._1c_syntax.bsl.languageserver.context.ServerContext;
-import org.github._1c_syntax.bsl.languageserver.diagnostics.BSLDiagnostic;
-import org.github._1c_syntax.bsl.languageserver.diagnostics.FunctionShouldHaveReturnDiagnostic;
-import org.github._1c_syntax.bsl.languageserver.diagnostics.LineLengthDiagnostic;
-import org.github._1c_syntax.bsl.languageserver.diagnostics.ParseErrorDiagnostic;
-import org.github._1c_syntax.bsl.languageserver.diagnostics.ProcedureReturnsValueDiagnostic;
-import org.github._1c_syntax.bsl.languageserver.diagnostics.QuickFixProvider;
-import org.github._1c_syntax.bsl.languageserver.diagnostics.UnknownPreprocessorSymbolDiagnostic;
-import org.github._1c_syntax.bsl.languageserver.diagnostics.UsingServiceTagDiagnostic;
-import org.github._1c_syntax.bsl.languageserver.diagnostics.metadata.DiagnosticType;
-import org.github._1c_syntax.bsl.languageserver.providers.DiagnosticProvider;
 import org.osgi.framework.Bundle;
 
 import com._1c.g5.v8.dt.bsl.model.Module;
 import com._1c.g5.v8.dt.bsl.resource.BslResource;
 import com._1c.g5.v8.dt.bsl.validation.CustomValidationMessageAcceptor;
 import com._1c.g5.v8.dt.bsl.validation.IExternalBslValidator;
+import com.github._1c_syntax.bsl.languageserver.configuration.LanguageServerConfiguration;
+import com.github._1c_syntax.bsl.languageserver.context.DocumentContext;
+import com.github._1c_syntax.bsl.languageserver.context.ServerContext;
+import com.github._1c_syntax.bsl.languageserver.diagnostics.BSLDiagnostic;
+import com.github._1c_syntax.bsl.languageserver.diagnostics.FunctionShouldHaveReturnDiagnostic;
+import com.github._1c_syntax.bsl.languageserver.diagnostics.LineLengthDiagnostic;
+import com.github._1c_syntax.bsl.languageserver.diagnostics.ParseErrorDiagnostic;
+import com.github._1c_syntax.bsl.languageserver.diagnostics.ProcedureReturnsValueDiagnostic;
+import com.github._1c_syntax.bsl.languageserver.diagnostics.QuickFixProvider;
+import com.github._1c_syntax.bsl.languageserver.diagnostics.UnknownPreprocessorSymbolDiagnostic;
+import com.github._1c_syntax.bsl.languageserver.diagnostics.UnreachableCodeDiagnostic;
+import com.github._1c_syntax.bsl.languageserver.diagnostics.UsingServiceTagDiagnostic;
+import com.github._1c_syntax.bsl.languageserver.diagnostics.metadata.DiagnosticType;
+import com.github._1c_syntax.bsl.languageserver.providers.DiagnosticProvider;
 
 public class BslValidator implements IExternalBslValidator {
 	private static final String QUICKFIX_CODE = "bsl-language-server"; //$NON-NLS-1$
@@ -104,6 +105,7 @@ public class BslValidator implements IExternalBslValidator {
 		duplicateDiagnostics.add(FunctionShouldHaveReturnDiagnostic.class);
 		duplicateDiagnostics.add(ProcedureReturnsValueDiagnostic.class);
 		duplicateDiagnostics.add(UnknownPreprocessorSymbolDiagnostic.class);
+		duplicateDiagnostics.add(UnreachableCodeDiagnostic.class);
 
 		// В настройках можно принудительно включить выключенные диагностики
 		for (Class<? extends BSLDiagnostic> diagnostic : duplicateDiagnostics) {

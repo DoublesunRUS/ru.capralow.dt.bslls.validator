@@ -95,7 +95,7 @@
 		<unit id="org.eclipse.xsd.edit.feature.group" version="0.0.0"/>
 		<unit id="org.eclipse.xsd.feature.group" version="0.0.0"/>
 		<unit id="org.eclipse.xtext.xbase.lib.feature.group" version="0.0.0"/>
-		<repository id="dt_repository" location="https://edt.1c.ru/releases/topaz/1.13.0/"/>
+		<repository id="dt_repository" location="https://edt.1c.ru/releases/topaz/1.14.0/"/>
 	</location>
 </locations>
 </target>
