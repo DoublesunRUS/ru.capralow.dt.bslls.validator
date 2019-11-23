@@ -5,7 +5,7 @@
 
 Минимальная версия EDT: 1.14.0
 
-Текущий релиз в ветке [master: 0.11.0](https://github.com/DoublesunRUS/ru.capralow.dt.bslls.validator/tree/master).<br>
+Текущий релиз в ветке [master: 0.12.0](https://github.com/DoublesunRUS/ru.capralow.dt.bslls.validator/tree/master).<br>
 Разработка ведется в ветке [dev](https://github.com/DoublesunRUS/ru.capralow.dt.bslls.validator/tree/dev).<br>
 
 В данном репозитории хранятся только исходники.<br>
@@ -15,7 +15,7 @@
 
 ### BSL Language Server
 Плагин использует [BSL Language Server](https://github.com/1c-syntax/bsl-language-server) в соответствии с [лицензией](https://github.com/1c-syntax/bsl-language-server/blob/develop/COPYING.md).<br>
-В состав плагина включена версия 0.11.0<br>
+В состав плагина включена версия 0.12.2<br>
 Список диагностик можно посмотреть на [официальном сайте](https://1c-syntax.github.io/bsl-language-server/#diagnostics) сервера.
 
 ### Возможности
