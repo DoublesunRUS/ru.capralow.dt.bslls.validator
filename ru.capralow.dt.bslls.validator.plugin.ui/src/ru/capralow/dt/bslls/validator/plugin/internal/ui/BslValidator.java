@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Platform;
@@ -33,6 +34,7 @@ import com.github._1c_syntax.bsl.languageserver.configuration.LanguageServerConf
 import com.github._1c_syntax.bsl.languageserver.context.DocumentContext;
 import com.github._1c_syntax.bsl.languageserver.context.ServerContext;
 import com.github._1c_syntax.bsl.languageserver.diagnostics.BSLDiagnostic;
+import com.github._1c_syntax.bsl.languageserver.diagnostics.DiagnosticSupplier;
 import com.github._1c_syntax.bsl.languageserver.diagnostics.FunctionShouldHaveReturnDiagnostic;
 import com.github._1c_syntax.bsl.languageserver.diagnostics.LineLengthDiagnostic;
 import com.github._1c_syntax.bsl.languageserver.diagnostics.ParseErrorDiagnostic;
@@ -41,6 +43,7 @@ import com.github._1c_syntax.bsl.languageserver.diagnostics.QuickFixProvider;
 import com.github._1c_syntax.bsl.languageserver.diagnostics.UnknownPreprocessorSymbolDiagnostic;
 import com.github._1c_syntax.bsl.languageserver.diagnostics.UnreachableCodeDiagnostic;
 import com.github._1c_syntax.bsl.languageserver.diagnostics.UsingServiceTagDiagnostic;
+import com.github._1c_syntax.bsl.languageserver.diagnostics.metadata.DiagnosticInfo;
 import com.github._1c_syntax.bsl.languageserver.diagnostics.metadata.DiagnosticType;
 import com.github._1c_syntax.bsl.languageserver.providers.DiagnosticProvider;
 
@@ -76,6 +79,10 @@ public class BslValidator implements IExternalBslValidator {
 		return result;
 	}
 
+	private LanguageServerConfiguration lsConfiguration;
+
+	private DiagnosticSupplier diagnosticSupplier;
+
 	private DiagnosticProvider diagnosticProvider;
 
 	private Map<Class<? extends BSLDiagnostic>, QuickFixProvider> quickFixProviders;
@@ -88,9 +95,9 @@ public class BslValidator implements IExternalBslValidator {
 		super();
 
 		File configurationFile = new File(getConfigurationFilePath() + File.separator + ".bsl-language-server.json"); //$NON-NLS-1$
-		LanguageServerConfiguration configuration = LanguageServerConfiguration.create(configurationFile);
+		lsConfiguration = LanguageServerConfiguration.create(configurationFile);
 
-		Map<String, Either<Boolean, Map<String, Object>>> diagnostics = configuration.getDiagnostics();
+		Map<String, Either<Boolean, Map<String, Object>>> diagnostics = lsConfiguration.getDiagnostics();
 		if (diagnostics == null)
 			diagnostics = new HashMap<>();
 
@@ -109,14 +116,16 @@ public class BslValidator implements IExternalBslValidator {
 
 		// В настройках можно принудительно включить выключенные диагностики
 		for (Class<? extends BSLDiagnostic> diagnostic : duplicateDiagnostics) {
-			String diagnocticCode = DiagnosticProvider.getDiagnosticCode(diagnostic);
+			DiagnosticInfo diagnosticInfo = new DiagnosticInfo(diagnostic, lsConfiguration);
+			String diagnocticCode = diagnosticInfo.getDiagnosticCode();
 			if (!diagnostics.containsKey(diagnocticCode))
 				diagnostics.put(diagnocticCode, falseForLeft);
 		}
 
-		configuration.setDiagnostics(diagnostics);
+		lsConfiguration.setDiagnostics(diagnostics);
 
-		diagnosticProvider = new DiagnosticProvider(configuration);
+		diagnosticSupplier = new DiagnosticSupplier(lsConfiguration);
+		diagnosticProvider = new DiagnosticProvider(diagnosticSupplier);
 		quickFixProviders = new HashMap<>();
 		bslServerContext = new ServerContext();
 		eObjectOffsetHelper = new EObjectAtOffsetHelper();
@@ -148,7 +157,7 @@ public class BslValidator implements IExternalBslValidator {
 			return issueData;
 
 		QuickFixProvider diagnosticInstance = quickFixProviders.computeIfAbsent(bslDiagnosticClass,
-				k -> (QuickFixProvider) diagnosticProvider.getDiagnosticInstance(k));
+				k -> (QuickFixProvider) diagnosticSupplier.getDiagnosticInstance(k));
 
 		List<CodeAction> quickFixes = diagnosticInstance
 				.getQuickFixes(Collections.singletonList(diagnostic), null, documentContext);
@@ -181,7 +190,15 @@ public class BslValidator implements IExternalBslValidator {
 
 	private void registerIssue(EObject object, CustomValidationMessageAcceptor messageAcceptor, Diagnostic diagnostic,
 			XtextResource eobjectResource, DocumentContext documentContext, Document doc) {
-		Class<? extends BSLDiagnostic> bslDiagnosticClass = DiagnosticProvider.getBSLDiagnosticClass(diagnostic);
+
+		Optional<Class<? extends BSLDiagnostic>> diagnosticClass = diagnosticSupplier
+				.getDiagnosticClass(diagnostic.getCode());
+
+		if (!diagnosticClass.isPresent())
+			return;
+
+		Class<? extends BSLDiagnostic> bslDiagnosticClass = diagnosticClass.get();
+		DiagnosticInfo diagnosticInfo = new DiagnosticInfo(bslDiagnosticClass, lsConfiguration);
 
 		Integer[] offsetAndLength = getOffsetAndLength(diagnostic.getRange(), doc);
 		Integer offset = offsetAndLength[0];
@@ -195,7 +212,7 @@ public class BslValidator implements IExternalBslValidator {
 
 		String diagnosticMessage = BSL_LS_PREFIX.concat(diagnostic.getMessage());
 
-		DiagnosticType diagnosticType = DiagnosticProvider.getDiagnosticType(bslDiagnosticClass);
+		DiagnosticType diagnosticType = diagnosticInfo.getDiagnosticType();
 		if (diagnosticType.equals(DiagnosticType.ERROR) || diagnosticType.equals(DiagnosticType.VULNERABILITY))
 			messageAcceptor.acceptError(diagnosticMessage,
 					diagnosticObject,
