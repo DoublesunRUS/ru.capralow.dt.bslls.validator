@@ -3,7 +3,7 @@
 <plugin>
 	<extension point="com._1c.g5.v8.dt.bsl.externalBslValidator">
 		<externalValidator
-			class="ru.capralow.dt.bslls.validator.plugin.internal.ui.BslValidator">
+			class="ru.capralow.dt.bslls.validator.plugin.internal.ui.ExecutableExtensionFactory:ru.capralow.dt.bslls.validator.plugin.internal.ui.BslValidator">
 		</externalValidator>
 	</extension>
 

@@ -30,6 +30,9 @@ import com._1c.g5.v8.dt.bsl.model.Module;
 import com._1c.g5.v8.dt.bsl.resource.BslResource;
 import com._1c.g5.v8.dt.bsl.validation.CustomValidationMessageAcceptor;
 import com._1c.g5.v8.dt.bsl.validation.IExternalBslValidator;
+import com._1c.g5.v8.dt.core.platform.IV8Project;
+import com._1c.g5.v8.dt.core.platform.IV8ProjectManager;
+import com.github._1c_syntax.bsl.languageserver.codeactions.QuickFixSupplier;
 import com.github._1c_syntax.bsl.languageserver.configuration.LanguageServerConfiguration;
 import com.github._1c_syntax.bsl.languageserver.context.DocumentContext;
 import com.github._1c_syntax.bsl.languageserver.context.ServerContext;
@@ -46,6 +49,7 @@ import com.github._1c_syntax.bsl.languageserver.diagnostics.UsingServiceTagDiagn
 import com.github._1c_syntax.bsl.languageserver.diagnostics.metadata.DiagnosticInfo;
 import com.github._1c_syntax.bsl.languageserver.diagnostics.metadata.DiagnosticType;
 import com.github._1c_syntax.bsl.languageserver.providers.DiagnosticProvider;
+import com.google.inject.Inject;
 
 public class BslValidator implements IExternalBslValidator {
 	private static final String QUICKFIX_CODE = "bsl-language-server"; //$NON-NLS-1$
@@ -85,11 +89,14 @@ public class BslValidator implements IExternalBslValidator {
 
 	private DiagnosticProvider diagnosticProvider;
 
-	private Map<Class<? extends BSLDiagnostic>, QuickFixProvider> quickFixProviders;
+	private QuickFixSupplier quickFixSuplier;
 
-	private ServerContext bslServerContext;
+	private Map<IV8Project, ServerContext> bslServerContexts;
 
 	private EObjectAtOffsetHelper eObjectOffsetHelper;
+
+	@Inject
+	private IV8ProjectManager projectManager;
 
 	public BslValidator() {
 		super();
@@ -126,9 +133,9 @@ public class BslValidator implements IExternalBslValidator {
 
 		diagnosticSupplier = new DiagnosticSupplier(lsConfiguration);
 		diagnosticProvider = new DiagnosticProvider(diagnosticSupplier);
-		quickFixProviders = new HashMap<>();
-		bslServerContext = new ServerContext();
+		quickFixSuplier = new QuickFixSupplier(diagnosticSupplier);
 		eObjectOffsetHelper = new EObjectAtOffsetHelper();
+		bslServerContexts = new HashMap<>();
 	}
 
 	@Override
@@ -138,8 +145,10 @@ public class BslValidator implements IExternalBslValidator {
 
 		boolean isDeepAnalysing = ((BslResource) ((Module) object).eResource()).isDeepAnalysing();
 
-		if (!isDeepAnalysing)
-			bslServerContext = new ServerContext();
+		if (!isDeepAnalysing) {
+			IV8Project v8Project = projectManager.getProject(object);
+			bslServerContexts.remove(v8Project);
+		}
 
 		return isDeepAnalysing;
 	}
@@ -156,10 +165,15 @@ public class BslValidator implements IExternalBslValidator {
 		if (documentContext == null || !QuickFixProvider.class.isAssignableFrom(bslDiagnosticClass))
 			return issueData;
 
-		QuickFixProvider diagnosticInstance = quickFixProviders.computeIfAbsent(bslDiagnosticClass,
-				k -> (QuickFixProvider) diagnosticSupplier.getDiagnosticInstance(k));
+		Optional<Class<? extends QuickFixProvider>> quickFixClass = quickFixSuplier
+				.getQuickFixClass(diagnostic.getCode());
 
-		List<CodeAction> quickFixes = diagnosticInstance
+		if (!quickFixClass.isPresent())
+			return issueData;
+
+		QuickFixProvider quickFixProvider = quickFixSuplier.getQuickFixInstance(quickFixClass.get());
+
+		List<CodeAction> quickFixes = quickFixProvider
 				.getQuickFixes(Collections.singletonList(diagnostic), null, documentContext);
 
 		for (CodeAction quickFix : quickFixes) {
@@ -236,6 +250,10 @@ public class BslValidator implements IExternalBslValidator {
 		if (monitor.isCanceled())
 			return;
 
+		long startTime = System.currentTimeMillis();
+		BslValidatorPlugin
+				.log(BslValidatorPlugin.createInfoStatus(BSL_LS_PREFIX.concat("Начало передачи текста модуля"))); //$NON-NLS-1$
+
 		XtextResource eObjectResource = (XtextResource) object.eResource();
 
 		Module module = (Module) object;
@@ -245,18 +263,23 @@ public class BslValidator implements IExternalBslValidator {
 
 		Document doc = new Document(objectText);
 
-		long startTime = System.currentTimeMillis();
-		BslValidatorPlugin
-				.log(BslValidatorPlugin.createInfoStatus(BSL_LS_PREFIX.concat("Начало передачи текста модуля"))); //$NON-NLS-1$
+		IV8Project v8Project = projectManager.getProject(module);
+		ServerContext bslServerContext = bslServerContexts.get(v8Project);
+		if (bslServerContext == null) {
+			bslServerContext = new ServerContext(v8Project.getProject().getLocation().toFile().toPath());
+			bslServerContexts.put(v8Project, bslServerContext);
+		}
+
 		DocumentContext documentContext = bslServerContext.addDocument(objectUri, objectText);
-		long endTime = System.currentTimeMillis();
-		String difference = " (".concat(Long.toString((endTime - startTime) / 1000)).concat("s)"); //$NON-NLS-1$ //$NON-NLS-2$
-		BslValidatorPlugin.log(BslValidatorPlugin
-				.createInfoStatus(BSL_LS_PREFIX.concat("Окончание передачи текста модуля").concat(difference))); //$NON-NLS-1$
 
 		List<Diagnostic> diagnostics = diagnosticProvider.computeDiagnostics(documentContext);
 		for (Diagnostic diagnostic : diagnostics)
 			registerIssue(object, messageAcceptor, diagnostic, eObjectResource, documentContext, doc);
+
+		long endTime = System.currentTimeMillis();
+		String difference = " (".concat(Long.toString((endTime - startTime) / 1000)).concat("s)"); //$NON-NLS-1$ //$NON-NLS-2$
+		BslValidatorPlugin.log(BslValidatorPlugin
+				.createInfoStatus(BSL_LS_PREFIX.concat("Окончание передачи текста модуля").concat(difference))); //$NON-NLS-1$
 	}
 
 }
