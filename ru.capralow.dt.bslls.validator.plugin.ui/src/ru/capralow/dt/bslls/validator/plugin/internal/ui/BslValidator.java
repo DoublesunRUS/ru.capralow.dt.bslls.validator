@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.emf.ecore.EObject;
@@ -52,127 +54,89 @@ import com.github._1c_syntax.bsl.languageserver.providers.DiagnosticProvider;
 import com.google.inject.Inject;
 
 public class BslValidator implements IExternalBslValidator {
+	private class ProjectContext {
+
+		private static final String BSL_LS_FILENAME = ".bsl-language-server.json"; //$NON-NLS-1$
+
+		private LanguageServerConfiguration lsConfiguration;
+		private DiagnosticSupplier diagnosticSupplier;
+		private DiagnosticProvider diagnosticProvider;
+		private QuickFixSupplier quickFixSuplier;
+		private ServerContext bslServerContext;
+
+		public ProjectContext(IProject project) {
+			initializeLsConfiguration(project);
+
+			diagnosticSupplier = new DiagnosticSupplier(lsConfiguration);
+			diagnosticProvider = new DiagnosticProvider(diagnosticSupplier);
+			quickFixSuplier = new QuickFixSupplier(diagnosticSupplier);
+
+			bslServerContext = new ServerContext(project.getLocation().toFile().toPath());
+		}
+
+		private IPath getConfigurationFilePath() {
+			Bundle bundle = Platform.getBundle(BslValidatorPlugin.ID);
+			return Platform.getStateLocation(bundle);
+		}
+
+		private void initializeLsConfiguration(IProject project) {
+			File configurationFile;
+
+			configurationFile = new File(project.getLocation().toFile().getParent() + File.separator + BSL_LS_FILENAME);
+			if (!configurationFile.exists())
+				configurationFile = new File(getConfigurationFilePath() + File.separator + BSL_LS_FILENAME);
+
+			lsConfiguration = LanguageServerConfiguration.create(configurationFile);
+
+			Map<String, Either<Boolean, Map<String, Object>>> diagnostics = lsConfiguration.getDiagnostics();
+			if (diagnostics == null)
+				diagnostics = new HashMap<>();
+
+			Collection<Class<? extends BSLDiagnostic>> duplicateDiagnostics = new ArrayList<>();
+
+			// Свои механизмы в EDT
+			duplicateDiagnostics.add(LineLengthDiagnostic.class);
+			duplicateDiagnostics.add(ParseErrorDiagnostic.class);
+			duplicateDiagnostics.add(UsingServiceTagDiagnostic.class);
+
+			// Диагностики есть в EDT
+			duplicateDiagnostics.add(FunctionShouldHaveReturnDiagnostic.class);
+			duplicateDiagnostics.add(ProcedureReturnsValueDiagnostic.class);
+			duplicateDiagnostics.add(UnknownPreprocessorSymbolDiagnostic.class);
+			duplicateDiagnostics.add(UnreachableCodeDiagnostic.class);
+
+			// В настройках можно принудительно включить выключенные диагностики
+			for (Class<? extends BSLDiagnostic> diagnostic : duplicateDiagnostics) {
+				DiagnosticInfo diagnosticInfo = new DiagnosticInfo(diagnostic, lsConfiguration);
+				String diagnocticCode = diagnosticInfo.getDiagnosticCode();
+				if (!diagnostics.containsKey(diagnocticCode))
+					diagnostics.put(diagnocticCode, falseForLeft);
+			}
+
+			lsConfiguration.setDiagnostics(diagnostics);
+		}
+	}
+
 	private static final String QUICKFIX_CODE = "bsl-language-server"; //$NON-NLS-1$
+
 	private static final String BSL_LS_PREFIX = "[BSL LS] "; //$NON-NLS-1$
 
 	private static final Either<Boolean, Map<String, Object>> falseForLeft = Either.forLeft(false);
 
-	private static IPath getConfigurationFilePath() {
-		Bundle bundle = Platform.getBundle(BslValidatorPlugin.ID);
-		return Platform.getStateLocation(bundle);
-	}
-
-	private static Integer[] getOffsetAndLength(Range range, Document doc) {
-		Integer offset = 0;
-		Integer length = 0;
-		try {
-			offset = doc.getLineOffset(range.getStart().getLine()) + range.getStart().getCharacter();
-			Integer endOffset = doc.getLineOffset(range.getEnd().getLine()) + range.getEnd().getCharacter();
-			length = endOffset - offset;
-
-		} catch (BadLocationException e) {
-			BslValidatorPlugin
-					.log(BslValidatorPlugin.createErrorStatus(Messages.BslValidator_Bad_Location_Exception, e));
-
-		}
-
-		Integer[] result = new Integer[2];
-		result[0] = offset;
-		result[1] = length;
-
-		return result;
-	}
-
-	private LanguageServerConfiguration lsConfiguration;
-
-	private DiagnosticSupplier diagnosticSupplier;
-
-	private DiagnosticProvider diagnosticProvider;
-
-	private QuickFixSupplier quickFixSuplier;
-
-	private Map<IV8Project, ServerContext> bslServerContexts;
-
-	private EObjectAtOffsetHelper eObjectOffsetHelper;
-
-	@Inject
-	private IV8ProjectManager projectManager;
-
-	public BslValidator() {
-		super();
-
-		File configurationFile = new File(getConfigurationFilePath() + File.separator + ".bsl-language-server.json"); //$NON-NLS-1$
-		lsConfiguration = LanguageServerConfiguration.create(configurationFile);
-
-		Map<String, Either<Boolean, Map<String, Object>>> diagnostics = lsConfiguration.getDiagnostics();
-		if (diagnostics == null)
-			diagnostics = new HashMap<>();
-
-		Collection<Class<? extends BSLDiagnostic>> duplicateDiagnostics = new ArrayList<>();
-
-		// Свои механизмы в EDT
-		duplicateDiagnostics.add(LineLengthDiagnostic.class);
-		duplicateDiagnostics.add(ParseErrorDiagnostic.class);
-		duplicateDiagnostics.add(UsingServiceTagDiagnostic.class);
-
-		// Диагностики есть в EDT
-		duplicateDiagnostics.add(FunctionShouldHaveReturnDiagnostic.class);
-		duplicateDiagnostics.add(ProcedureReturnsValueDiagnostic.class);
-		duplicateDiagnostics.add(UnknownPreprocessorSymbolDiagnostic.class);
-		duplicateDiagnostics.add(UnreachableCodeDiagnostic.class);
-
-		// В настройках можно принудительно включить выключенные диагностики
-		for (Class<? extends BSLDiagnostic> diagnostic : duplicateDiagnostics) {
-			DiagnosticInfo diagnosticInfo = new DiagnosticInfo(diagnostic, lsConfiguration);
-			String diagnocticCode = diagnosticInfo.getDiagnosticCode();
-			if (!diagnostics.containsKey(diagnocticCode))
-				diagnostics.put(diagnocticCode, falseForLeft);
-		}
-
-		lsConfiguration.setDiagnostics(diagnostics);
-
-		diagnosticSupplier = new DiagnosticSupplier(lsConfiguration);
-		diagnosticProvider = new DiagnosticProvider(diagnosticSupplier);
-		quickFixSuplier = new QuickFixSupplier(diagnosticSupplier);
-		eObjectOffsetHelper = new EObjectAtOffsetHelper();
-		bslServerContexts = new HashMap<>();
-	}
-
-	@Override
-	public boolean needValidation(EObject object) {
-		if (!(object instanceof Module))
-			return false;
-
-		boolean isDeepAnalysing = ((BslResource) ((Module) object).eResource()).isDeepAnalysing();
-
-		if (!isDeepAnalysing) {
-			IV8Project v8Project = projectManager.getProject(object);
-			if (bslServerContexts.containsKey(v8Project))
-				bslServerContexts.remove(v8Project);
-		}
-
-		return isDeepAnalysing;
-	}
-
-	@Override
-	public void validate(EObject object, CustomValidationMessageAcceptor messageAcceptor, CancelIndicator monitor) {
-		validateModule(object, messageAcceptor, monitor);
-	}
-
-	private StringBuilder getIssueData(Diagnostic diagnostic, Class<? extends BSLDiagnostic> bslDiagnosticClass,
-			DocumentContext documentContext, Document doc) {
+	private static StringBuilder getIssueData(Diagnostic diagnostic, Class<? extends BSLDiagnostic> bslDiagnosticClass,
+			DocumentContext documentContext, Document doc, ProjectContext projectContext) {
 		StringBuilder issueData = new StringBuilder();
 
 		if (documentContext == null || !QuickFixProvider.class.isAssignableFrom(bslDiagnosticClass))
 			return issueData;
 
-		Optional<Class<? extends QuickFixProvider>> quickFixClass = quickFixSuplier
+		Optional<Class<? extends QuickFixProvider>> quickFixClass = projectContext.quickFixSuplier
 				.getQuickFixClass(diagnostic.getCode());
 
 		if (!quickFixClass.isPresent())
 			return issueData;
 
-		QuickFixProvider quickFixProvider = quickFixSuplier.getQuickFixInstance(quickFixClass.get());
+		QuickFixProvider quickFixProvider = projectContext.quickFixSuplier.getQuickFixInstance(quickFixClass.get());
 
 		List<CodeAction> quickFixes = quickFixProvider
 				.getQuickFixes(Collections.singletonList(diagnostic), null, documentContext);
@@ -203,17 +167,70 @@ public class BslValidator implements IExternalBslValidator {
 
 	}
 
-	private void registerIssue(EObject object, CustomValidationMessageAcceptor messageAcceptor, Diagnostic diagnostic,
-			XtextResource eobjectResource, DocumentContext documentContext, Document doc) {
+	private static Integer[] getOffsetAndLength(Range range, Document doc) {
+		Integer offset = 0;
+		Integer length = 0;
+		try {
+			offset = doc.getLineOffset(range.getStart().getLine()) + range.getStart().getCharacter();
+			Integer endOffset = doc.getLineOffset(range.getEnd().getLine()) + range.getEnd().getCharacter();
+			length = endOffset - offset;
 
-		Optional<Class<? extends BSLDiagnostic>> diagnosticClass = diagnosticSupplier
+		} catch (BadLocationException e) {
+			BslValidatorPlugin
+					.log(BslValidatorPlugin.createErrorStatus(Messages.BslValidator_Bad_Location_Exception, e));
+
+		}
+
+		Integer[] result = new Integer[2];
+		result[0] = offset;
+		result[1] = length;
+
+		return result;
+	}
+
+	private Map<IProject, ProjectContext> projectsContext;
+
+	private EObjectAtOffsetHelper eObjectOffsetHelper;
+
+	@Inject
+	private IV8ProjectManager projectManager;
+
+	public BslValidator() {
+		super();
+
+		eObjectOffsetHelper = new EObjectAtOffsetHelper();
+		projectsContext = new HashMap<>();
+		for (IProject project : ResourcesPlugin.getWorkspace().getRoot().getProjects()) {
+			ProjectContext projectContext = new ProjectContext(project);
+			projectsContext.put(project, projectContext);
+		}
+	}
+
+	@Override
+	public boolean needValidation(EObject object) {
+		if (!(object instanceof Module))
+			return false;
+
+		return ((BslResource) ((Module) object).eResource()).isDeepAnalysing();
+	}
+
+	@Override
+	public void validate(EObject object, CustomValidationMessageAcceptor messageAcceptor, CancelIndicator monitor) {
+		validateModule(object, messageAcceptor, monitor);
+	}
+
+	private void registerIssue(EObject object, CustomValidationMessageAcceptor messageAcceptor, Diagnostic diagnostic,
+			XtextResource eobjectResource, DocumentContext documentContext, Document doc,
+			ProjectContext projectContext) {
+
+		Optional<Class<? extends BSLDiagnostic>> diagnosticClass = projectContext.diagnosticSupplier
 				.getDiagnosticClass(diagnostic.getCode());
 
 		if (!diagnosticClass.isPresent())
 			return;
 
 		Class<? extends BSLDiagnostic> bslDiagnosticClass = diagnosticClass.get();
-		DiagnosticInfo diagnosticInfo = new DiagnosticInfo(bslDiagnosticClass, lsConfiguration);
+		DiagnosticInfo diagnosticInfo = new DiagnosticInfo(bslDiagnosticClass, projectContext.lsConfiguration);
 
 		Integer[] offsetAndLength = getOffsetAndLength(diagnostic.getRange(), doc);
 		Integer offset = offsetAndLength[0];
@@ -223,7 +240,7 @@ public class BslValidator implements IExternalBslValidator {
 		if (diagnosticObject == null)
 			diagnosticObject = object;
 
-		StringBuilder issueData = getIssueData(diagnostic, bslDiagnosticClass, documentContext, doc);
+		StringBuilder issueData = getIssueData(diagnostic, bslDiagnosticClass, documentContext, doc, projectContext);
 
 		String diagnosticMessage = BSL_LS_PREFIX.concat(diagnostic.getMessage());
 
@@ -251,6 +268,14 @@ public class BslValidator implements IExternalBslValidator {
 		if (monitor.isCanceled())
 			return;
 
+		IV8Project v8Project = projectManager.getProject(object);
+		if (v8Project == null)
+			return;
+
+		ProjectContext projectContext = projectsContext.get(v8Project.getProject());
+		if (projectContext == null)
+			return;
+
 		long startTime = System.currentTimeMillis();
 		BslValidatorPlugin
 				.log(BslValidatorPlugin.createInfoStatus(BSL_LS_PREFIX.concat("Начало передачи текста модуля"))); //$NON-NLS-1$
@@ -264,20 +289,11 @@ public class BslValidator implements IExternalBslValidator {
 
 		Document doc = new Document(objectText);
 
-		IV8Project v8Project = projectManager.getProject(module);
-		if (v8Project == null)
-			return;
-		ServerContext bslServerContext = bslServerContexts.get(v8Project);
-		if (bslServerContext == null) {
-			bslServerContext = new ServerContext(v8Project.getProject().getLocation().toFile().toPath());
-			bslServerContexts.put(v8Project, bslServerContext);
-		}
+		DocumentContext documentContext = projectContext.bslServerContext.addDocument(objectUri, objectText);
 
-		DocumentContext documentContext = bslServerContext.addDocument(objectUri, objectText);
-
-		List<Diagnostic> diagnostics = diagnosticProvider.computeDiagnostics(documentContext);
+		List<Diagnostic> diagnostics = projectContext.diagnosticProvider.computeDiagnostics(documentContext);
 		for (Diagnostic diagnostic : diagnostics)
-			registerIssue(object, messageAcceptor, diagnostic, eObjectResource, documentContext, doc);
+			registerIssue(object, messageAcceptor, diagnostic, eObjectResource, documentContext, doc, projectContext);
 
 		long endTime = System.currentTimeMillis();
 		String difference = " (".concat(Long.toString((endTime - startTime) / 1000)).concat("s)"); //$NON-NLS-1$ //$NON-NLS-2$
