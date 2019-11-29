@@ -147,7 +147,8 @@ public class BslValidator implements IExternalBslValidator {
 
 		if (!isDeepAnalysing) {
 			IV8Project v8Project = projectManager.getProject(object);
-			bslServerContexts.remove(v8Project);
+			if (bslServerContexts.containsKey(v8Project))
+				bslServerContexts.remove(v8Project);
 		}
 
 		return isDeepAnalysing;
@@ -264,6 +265,8 @@ public class BslValidator implements IExternalBslValidator {
 		Document doc = new Document(objectText);
 
 		IV8Project v8Project = projectManager.getProject(module);
+		if (v8Project == null)
+			return;
 		ServerContext bslServerContext = bslServerContexts.get(v8Project);
 		if (bslServerContext == null) {
 			bslServerContext = new ServerContext(v8Project.getProject().getLocation().toFile().toPath());
