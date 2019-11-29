@@ -16,7 +16,7 @@
 ### BSL Language Server
 Плагин использует [BSL Language Server](https://github.com/1c-syntax/bsl-language-server) в соответствии с [лицензией](https://github.com/1c-syntax/bsl-language-server/blob/develop/COPYING.md).<br>
 В состав плагина включена версия 0.12.3<br>
-Список диагностик можно посмотреть на [официальном сайте](https://1c-syntax.github.io/bsl-language-server/#diagnostics) сервера.
+Список диагностик можно посмотреть на [официальном сайте](https://1c-syntax.github.io/bsl-language-server/diagnostics) сервера.
 
 ### Возможности
 При запуске Расширенной проверки из контекстного меню проекта, в список ошибок добавляются ошибки, которые диагностирует BSL LS. При открытии ошибки открывается модуль с этой ошибкой.<br>
