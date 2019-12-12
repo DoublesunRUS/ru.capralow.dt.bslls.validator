@@ -160,7 +160,7 @@ public class BslValidator implements IExternalBslValidator {
 
 			if (issueData.length() != 0)
 				issueData.append(System.lineSeparator());
-			issueData.append(String.join(",", issueLine)); //$NON-NLS-1$
+			issueData.append(String.join("|", issueLine)); //$NON-NLS-1$
 		}
 
 		return issueData;

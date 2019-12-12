@@ -17,7 +17,7 @@ public class BslQuickFix extends AbstractExternalQuickfixProvider {
 			if (issueLine.isEmpty())
 				continue;
 
-			String[] issueList = issueLine.split("[,]"); //$NON-NLS-1$
+			String[] issueList = issueLine.split("[|]"); //$NON-NLS-1$
 
 			String issueCommand = issueList[0];
 			String issueMessage = issueList[1];
