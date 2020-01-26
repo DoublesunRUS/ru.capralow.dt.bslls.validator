@@ -103,12 +103,7 @@
 		<unit id="com._1c.g5.v8.dt.bp.scheme.feature.feature.group" version="0.0.0"/>
 		<unit id="com._1c.g5.v8.dt.profiling.feature.feature.group" version="0.0.0"/>
 		<unit id="com._1c.g5.v8.dt.diagram.framework.feature.feature.group" version="0.0.0"/>
-		<repository id="dt_repository" location="https://edt.1c.ru/releases/int/1.16.0/"/>
-	</location>
-	<!-- javax.activation ошибочно отсутствует в целевой платформе -->
-	<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="slicer" includeSource="true" type="InstallableUnit">
-		<unit id="javax.activation" version="0.0.0"/>
-		<repository location="https://download.eclipse.org/tools/orbit/downloads/drops/R20190602212107/repository"/>
+		<repository id="dt_repository" location="https://edt.1c.ru/releases/topaz/1.16.0/"/>
 	</location>
 </locations>
 </target>
