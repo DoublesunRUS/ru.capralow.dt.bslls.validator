@@ -55,6 +55,7 @@ import com.github._1c_syntax.bsl.languageserver.diagnostics.UsingServiceTagDiagn
 import com.github._1c_syntax.bsl.languageserver.diagnostics.metadata.DiagnosticInfo;
 import com.github._1c_syntax.bsl.languageserver.diagnostics.metadata.DiagnosticType;
 import com.github._1c_syntax.bsl.languageserver.providers.DiagnosticProvider;
+import com.github._1c_syntax.mdclasses.metadata.additional.ConfigurationSource;
 import com.google.inject.Inject;
 
 public class BslValidator implements IExternalBslValidator {
@@ -77,6 +78,14 @@ public class BslValidator implements IExternalBslValidator {
 			quickFixSuplier = new QuickFixSupplier(diagnosticSupplier);
 
 			bslServerContext = new ServerContext(project.getLocation().toFile().toPath());
+
+			String initializationMessage = BSL_LS_PREFIX.concat("Инициализация с метаданными: ") //$NON-NLS-1$
+					.concat(project.getName());
+			if (bslServerContext.getConfiguration().getConfigurationSource().equals(ConfigurationSource.EMPTY))
+				initializationMessage = BSL_LS_PREFIX.concat("Инициализация БЕЗ метаданных: ") //$NON-NLS-1$
+						.concat(project.getName());
+
+			BslValidatorPlugin.log(BslValidatorPlugin.createInfoStatus(initializationMessage));
 		}
 
 		private IPath getConfigurationFilePath() {
