@@ -79,10 +79,24 @@ public class BslValidator implements IExternalBslValidator {
 
 			bslServerContext = new ServerContext(project.getLocation().toFile().toPath());
 
-			String initializationMessage = BSL_LS_PREFIX.concat("Инициализация с метаданными: ") //$NON-NLS-1$
-					.concat(project.getName());
-			if (bslServerContext.getConfiguration().getConfigurationSource().equals(ConfigurationSource.EMPTY))
+			String initializationMessage = ""; //$NON-NLS-1$
+
+			ConfigurationSource configurationSource = bslServerContext.getConfiguration().getConfigurationSource();
+
+			if (configurationSource.equals(ConfigurationSource.EDT))
+				initializationMessage = BSL_LS_PREFIX.concat("Инициализация с EDT метаданными: ") //$NON-NLS-1$
+						.concat(project.getName());
+
+			else if (configurationSource.equals(ConfigurationSource.EMPTY))
 				initializationMessage = BSL_LS_PREFIX.concat("Инициализация БЕЗ метаданных: ") //$NON-NLS-1$
+						.concat(project.getName());
+
+			else if (configurationSource.equals(ConfigurationSource.DESIGNER))
+				initializationMessage = BSL_LS_PREFIX.concat("Инициализация c метаданными КОНФИГУРАТОРА: ") //$NON-NLS-1$
+						.concat(project.getName());
+
+			else
+				initializationMessage = BSL_LS_PREFIX.concat("Инициализация c НЕИЗВЕСТНЫМИ метаданными: ") //$NON-NLS-1$
 						.concat(project.getName());
 
 			BslValidatorPlugin.log(BslValidatorPlugin.createInfoStatus(initializationMessage));
