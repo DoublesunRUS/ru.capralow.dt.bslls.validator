@@ -136,7 +136,7 @@ public class BslValidator implements IExternalBslValidator {
 			// В настройках можно принудительно включить выключенные диагностики
 			for (Class<? extends BSLDiagnostic> diagnostic : duplicateDiagnostics) {
 				DiagnosticInfo diagnosticInfo = new DiagnosticInfo(diagnostic, lsConfiguration.getDiagnosticLanguage());
-				String diagnocticCode = diagnosticInfo.getCode();
+				String diagnocticCode = diagnosticInfo.getCode().getStringValue();
 				if (!diagnostics.containsKey(diagnocticCode))
 					diagnostics.put(diagnocticCode, falseForLeft);
 			}
