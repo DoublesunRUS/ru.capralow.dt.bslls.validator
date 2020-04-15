@@ -1,11 +1,11 @@
-# dt.bslls.validator [![Build Status](https://travis-ci.org/DoublesunRUS/ru.capralow.dt.bslls.validator.svg)](https://travis-ci.org/DoublesunRUS/ru.capralow.dt.bslls.validator) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=DoublesunRUS_ru.capralow.dt.bslls.validator&metric=alert_status)](https://sonarcloud.io/dashboard?id=DoublesunRUS_ru.capralow.dt.bslls.validator) [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=DoublesunRUS_ru.capralow.dt.bslls.validator&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=DoublesunRUS_ru.capralow.dt.bslls.validator) [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=DoublesunRUS_ru.capralow.dt.bslls.validator&metric=coverage)](https://sonarcloud.io/dashboard?id=DoublesunRUS_ru.capralow.dt.bslls.validator)
+# dt.bslls.validator [![Build Status](https://travis-ci.com/DoublesunRUS/ru.capralow.dt.bslls.validator.svg)](https://travis-ci.com/DoublesunRUS/ru.capralow.dt.bslls.validator) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=DoublesunRUS_ru.capralow.dt.bslls.validator&metric=alert_status)](https://sonarcloud.io/dashboard?id=DoublesunRUS_ru.capralow.dt.bslls.validator) [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=DoublesunRUS_ru.capralow.dt.bslls.validator&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=DoublesunRUS_ru.capralow.dt.bslls.validator) [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=DoublesunRUS_ru.capralow.dt.bslls.validator&metric=coverage)](https://sonarcloud.io/dashboard?id=DoublesunRUS_ru.capralow.dt.bslls.validator)
 
 
 ## BSL проверки для [1C:Enterprise Development Tools](http://v8.1c.ru/overview/IDE/) 1.16
 
 Минимальная версия EDT: 1.16.0
 
-Текущий релиз в ветке [master: 0.13.0](https://github.com/DoublesunRUS/ru.capralow.dt.bslls.validator/tree/master).<br>
+Текущий релиз в ветке [master: 0.14.0](https://github.com/DoublesunRUS/ru.capralow.dt.bslls.validator/tree/master).<br>
 Разработка ведется в ветке [dev](https://github.com/DoublesunRUS/ru.capralow.dt.bslls.validator/tree/dev).<br>
 
 В данном репозитории хранятся только исходники.<br>
@@ -15,7 +15,7 @@
 
 ### BSL Language Server
 Плагин использует [BSL Language Server](https://github.com/1c-syntax/bsl-language-server) в соответствии с [лицензией](https://github.com/1c-syntax/bsl-language-server/blob/develop/COPYING.md).<br>
-В состав плагина включена версия 0.13.0<br>
+В состав плагина включена версия 0.14.1<br>
 Список диагностик можно посмотреть на [официальном сайте](https://1c-syntax.github.io/bsl-language-server/diagnostics) сервера.
 
 ### Возможности
@@ -32,6 +32,7 @@
 * UsingServiceTag
 
 Диагностики есть в EDT:
+* CodeBlockBeforeSub
 * FunctionShouldHaveReturn
 * ProcedureReturnsValue
 * UnknownPreprocessorSymbol
