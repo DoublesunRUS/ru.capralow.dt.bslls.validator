@@ -43,6 +43,7 @@ import com.github._1c_syntax.bsl.languageserver.configuration.LanguageServerConf
 import com.github._1c_syntax.bsl.languageserver.context.DocumentContext;
 import com.github._1c_syntax.bsl.languageserver.context.ServerContext;
 import com.github._1c_syntax.bsl.languageserver.diagnostics.BSLDiagnostic;
+import com.github._1c_syntax.bsl.languageserver.diagnostics.CodeBlockBeforeSubDiagnostic;
 import com.github._1c_syntax.bsl.languageserver.diagnostics.DiagnosticSupplier;
 import com.github._1c_syntax.bsl.languageserver.diagnostics.FunctionShouldHaveReturnDiagnostic;
 import com.github._1c_syntax.bsl.languageserver.diagnostics.LineLengthDiagnostic;
@@ -114,6 +115,12 @@ public class BslValidator implements IExternalBslValidator {
 			if (!configurationFile.exists())
 				configurationFile = new File(getConfigurationFilePath() + File.separator + BSL_LS_FILENAME);
 
+			if (configurationFile.exists()) {
+				String initializationMessage = BSL_LS_PREFIX.concat("Конфигурационный файл: ") //$NON-NLS-1$
+						.concat(configurationFile.getPath());
+				BslValidatorPlugin.log(BslValidatorPlugin.createInfoStatus(initializationMessage));
+			}
+
 			LanguageServerConfiguration lsConfiguration = LanguageServerConfiguration.create(configurationFile);
 
 			Map<String, Either<Boolean, Map<String, Object>>> diagnostics = lsConfiguration.getDiagnostics();
@@ -128,6 +135,7 @@ public class BslValidator implements IExternalBslValidator {
 			duplicateDiagnostics.add(UsingServiceTagDiagnostic.class);
 
 			// Диагностики есть в EDT
+			duplicateDiagnostics.add(CodeBlockBeforeSubDiagnostic.class);
 			duplicateDiagnostics.add(FunctionShouldHaveReturnDiagnostic.class);
 			duplicateDiagnostics.add(ProcedureReturnsValueDiagnostic.class);
 			duplicateDiagnostics.add(UnknownPreprocessorSymbolDiagnostic.class);

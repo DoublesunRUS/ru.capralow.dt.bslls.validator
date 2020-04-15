@@ -10,7 +10,7 @@
 
 В данном репозитории хранятся только исходники.<br>
 
-Плагин можно установить в EDT через пункт "Установить новое ПО" указав сайт обновления http://capralow.ru/edt/bslls.validator/0.14.0/ .<br>
+Плагин можно установить в EDT через пункт "Установить новое ПО" указав сайт обновления http://capralow.ru/edt/bslls.validator/latest/ .<br>
 Для самостоятельной сборки плагина необходимо иметь доступ к сайту https://releases.1c.ru и настроить соответствующим образом Maven. Подробности настройки написаны [здесь](https://github.com/1C-Company/dt-example-plugins/blob/master/simple-plugin/README.md).<br>
 
 ### BSL Language Server
@@ -32,6 +32,7 @@
 * UsingServiceTag
 
 Диагностики есть в EDT:
+* CodeBlockBeforeSub
 * FunctionShouldHaveReturn
 * ProcedureReturnsValue
 * UnknownPreprocessorSymbol
