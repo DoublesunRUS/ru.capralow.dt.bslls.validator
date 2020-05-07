@@ -340,6 +340,9 @@ public class BslValidator implements IExternalBslValidator {
 			registerIssue(object, messageAcceptor, diagnostic, eObjectResource, documentContext, doc, projectContext);
 		}
 
+		projectContext.diagnosticProvider.clearComputedDiagnostics(documentContext);
+		documentContext.clearSecondaryData();
+
 		long endTime = System.currentTimeMillis();
 		String difference = " (".concat(Long.toString((endTime - startTime) / 1000)).concat("s)"); //$NON-NLS-1$ //$NON-NLS-2$
 		BslValidatorPlugin.log(BslValidatorPlugin
