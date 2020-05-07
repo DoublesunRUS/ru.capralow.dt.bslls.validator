@@ -1,6 +1,7 @@
 package ru.capralow.dt.bslls.validator.plugin.internal.ui;
 
 import java.io.File;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -257,15 +258,17 @@ public class BslValidator implements IExternalBslValidator {
 		validateModule(object, messageAcceptor, monitor);
 	}
 
-	private void registerIssue(EObject object, CustomValidationMessageAcceptor messageAcceptor, Diagnostic diagnostic,
+	private long registerIssue(EObject object, CustomValidationMessageAcceptor messageAcceptor, Diagnostic diagnostic,
 			XtextResource eobjectResource, DocumentContext documentContext, Document doc,
 			ProjectContext projectContext) {
+
+		long findNodeDifference = 0;
 
 		Optional<Class<? extends BSLDiagnostic>> diagnosticClass = projectContext.diagnosticSupplier
 				.getDiagnosticClass(diagnostic.getCode());
 
 		if (!diagnosticClass.isPresent())
-			return;
+			return findNodeDifference;
 
 		Class<? extends BSLDiagnostic> bslDiagnosticClass = diagnosticClass.get();
 		DiagnosticInfo diagnosticInfo = new DiagnosticInfo(bslDiagnosticClass, projectContext.diagnosticLanguage);
@@ -274,7 +277,9 @@ public class BslValidator implements IExternalBslValidator {
 		Integer offset = offsetAndLength[0];
 		Integer length = offsetAndLength[1];
 
+		long startTime = System.currentTimeMillis();
 		EObject diagnosticObject = eObjectOffsetHelper.resolveContainedElementAt(eobjectResource, offset);
+		findNodeDifference = System.currentTimeMillis() - startTime;
 		if (diagnosticObject == null)
 			diagnosticObject = object;
 
@@ -298,6 +303,8 @@ public class BslValidator implements IExternalBslValidator {
 					length,
 					QUICKFIX_CODE,
 					issueData.toString());
+
+		return findNodeDifference;
 
 	}
 
@@ -332,21 +339,43 @@ public class BslValidator implements IExternalBslValidator {
 		DocumentContext documentContext = projectContext.bslServerContext.addDocument(moduleFile.getLocationURI(),
 				objectText);
 
+		long computeStartTime = System.currentTimeMillis();
 		List<Diagnostic> diagnostics = projectContext.diagnosticProvider.computeDiagnostics(documentContext);
+		long computeDifference = System.currentTimeMillis() - computeStartTime;
+		long findNodeDifference = 0;
+		int findNodeAmount = diagnostics.size();
 		for (Diagnostic diagnostic : diagnostics) {
 			if (monitor.isCanceled())
 				break;
 
-			registerIssue(object, messageAcceptor, diagnostic, eObjectResource, documentContext, doc, projectContext);
+			long currentNodeDifference = registerIssue(object,
+					messageAcceptor,
+					diagnostic,
+					eObjectResource,
+					documentContext,
+					doc,
+					projectContext);
+
+			findNodeDifference += currentNodeDifference;
 		}
 
 		projectContext.diagnosticProvider.clearComputedDiagnostics(documentContext);
 		documentContext.clearSecondaryData();
 
-		long endTime = System.currentTimeMillis();
-		String difference = " (".concat(Long.toString((endTime - startTime) / 1000)).concat("s)"); //$NON-NLS-1$ //$NON-NLS-2$
+		long difference = System.currentTimeMillis() - startTime;
+
+		if (difference > 30000)
+			BslValidatorPlugin.log(BslValidatorPlugin.createInfoStatus(BSL_LS_PREFIX
+					.concat("URI модуля длительной проверки: ").concat(moduleFile.getLocation().toString()))); //$NON-NLS-1$
+
+		String differenceText = MessageFormat.format("(всего:{0}сек,анализ:{1}сек,поиск:{2}сек/{3}проб)", //$NON-NLS-1$
+				Long.toString(difference / 1000),
+				Long.toString(computeDifference / 1000),
+				Long.toString(findNodeDifference / 1000),
+				findNodeAmount);
+
 		BslValidatorPlugin.log(BslValidatorPlugin
-				.createInfoStatus(BSL_LS_PREFIX.concat("Окончание передачи текста модуля").concat(difference))); //$NON-NLS-1$
+				.createInfoStatus(BSL_LS_PREFIX.concat("Окончание передачи текста модуля ").concat(differenceText))); //$NON-NLS-1$
 	}
 
 }
