@@ -6,11 +6,11 @@
       provider-name="%providerName">
 
    <description>
-      BSL проверки для EDT
+      %featureName
    </description>
 
    <copyright>
-      Капралов Александр Александрович
+      %providerName
    </copyright>
 
    <license url="">
