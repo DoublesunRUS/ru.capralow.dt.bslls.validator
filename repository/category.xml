@@ -3,5 +3,5 @@
    <feature url="features/ru.capralow.dt.bslls.validator_0.14.0.qualifier.jar" id="ru.capralow.dt.bslls.validator" version="0.14.0.qualifier">
       <category name="ru.capralow.dt.plugin.category.public"/>
    </feature>
-   <category-def name="ru.capralow.dt.plugin.category.public" label="Плагины для EDT"/>
+   <category-def name="ru.capralow.dt.plugin.category.public" label="Plugins for EDT"/>
 </site>
