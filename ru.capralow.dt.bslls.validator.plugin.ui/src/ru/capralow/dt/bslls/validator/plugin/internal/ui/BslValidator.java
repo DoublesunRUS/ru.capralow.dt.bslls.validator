@@ -364,7 +364,7 @@ public class BslValidator implements IExternalBslValidator {
 
 		long difference = System.currentTimeMillis() - startTime;
 
-		if (difference > 30000)
+		if (difference > 10000)
 			BslValidatorPlugin.log(BslValidatorPlugin.createInfoStatus(BSL_LS_PREFIX
 					.concat("URI модуля длительной проверки: ").concat(moduleFile.getLocation().toString()))); //$NON-NLS-1$
 
@@ -372,7 +372,7 @@ public class BslValidator implements IExternalBslValidator {
 				Long.toString(difference / 1000),
 				Long.toString(computeDifference / 1000),
 				Long.toString(findNodeDifference / 1000),
-				findNodeAmount);
+				String.valueOf(findNodeAmount));
 
 		BslValidatorPlugin.log(BslValidatorPlugin
 				.createInfoStatus(BSL_LS_PREFIX.concat("Окончание передачи текста модуля ").concat(differenceText))); //$NON-NLS-1$
