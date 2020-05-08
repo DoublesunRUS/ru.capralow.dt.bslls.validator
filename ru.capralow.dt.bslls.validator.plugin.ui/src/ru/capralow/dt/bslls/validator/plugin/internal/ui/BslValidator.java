@@ -26,9 +26,8 @@ import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.xtext.nodemodel.ICompositeNode;
+import org.eclipse.xtext.nodemodel.ILeafNode;
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils;
-import org.eclipse.xtext.resource.EObjectAtOffsetHelper;
-import org.eclipse.xtext.resource.XtextResource;
 import org.eclipse.xtext.util.CancelIndicator;
 import org.osgi.framework.Bundle;
 
@@ -38,6 +37,7 @@ import com._1c.g5.v8.dt.bsl.validation.CustomValidationMessageAcceptor;
 import com._1c.g5.v8.dt.bsl.validation.IExternalBslValidator;
 import com._1c.g5.v8.dt.core.platform.IV8Project;
 import com._1c.g5.v8.dt.core.platform.IV8ProjectManager;
+import com._1c.g5.v8.dt.lcore.nodemodel.util.CustomNodeModelUtils;
 import com.github._1c_syntax.bsl.languageserver.codeactions.QuickFixSupplier;
 import com.github._1c_syntax.bsl.languageserver.configuration.DiagnosticLanguage;
 import com.github._1c_syntax.bsl.languageserver.configuration.LanguageServerConfiguration;
@@ -243,8 +243,6 @@ public class BslValidator
 
     private Map<IProject, ProjectContext> projectsContext;
 
-    private EObjectAtOffsetHelper eObjectOffsetHelper;
-
     @Inject
     private IV8ProjectManager projectManager;
 
@@ -252,7 +250,6 @@ public class BslValidator
     {
         super();
 
-        eObjectOffsetHelper = new EObjectAtOffsetHelper();
         projectsContext = new HashMap<>();
         for (IProject project : ResourcesPlugin.getWorkspace().getRoot().getProjects())
         {
@@ -277,7 +274,7 @@ public class BslValidator
     }
 
     private long registerIssue(EObject object, CustomValidationMessageAcceptor messageAcceptor, Diagnostic diagnostic,
-        XtextResource eobjectResource, DocumentContext documentContext, Document doc, ProjectContext projectContext)
+        ICompositeNode eObjectNode, DocumentContext documentContext, Document doc, ProjectContext projectContext)
     {
 
         long findNodeDifference = 0;
@@ -296,7 +293,8 @@ public class BslValidator
         Integer length = offsetAndLength[1];
 
         long startTime = System.currentTimeMillis();
-        EObject diagnosticObject = eObjectOffsetHelper.resolveContainedElementAt(eobjectResource, offset);
+        ILeafNode leafNode = CustomNodeModelUtils.findLeafNodeAtOffset(eObjectNode, offset);
+        EObject diagnosticObject = NodeModelUtils.findActualSemanticObjectFor(leafNode);
         findNodeDifference = System.currentTimeMillis() - startTime;
         if (diagnosticObject == null)
             diagnosticObject = object;
@@ -336,7 +334,7 @@ public class BslValidator
         BslValidatorPlugin.log(
             BslValidatorPlugin.createInfoStatus(BSL_LS_PREFIX.concat("Начало передачи текста модуля"))); //$NON-NLS-1$
 
-        XtextResource eObjectResource = (XtextResource)object.eResource();
+        ICompositeNode eObjectNode = NodeModelUtils.getNode(object);
 
         Module module = (Module)object;
         IFile moduleFile =
@@ -360,8 +358,8 @@ public class BslValidator
             if (monitor.isCanceled())
                 break;
 
-            long currentNodeDifference = registerIssue(object, messageAcceptor, diagnostic, eObjectResource,
-                documentContext, doc, projectContext);
+            long currentNodeDifference =
+                registerIssue(object, messageAcceptor, diagnostic, eObjectNode, documentContext, doc, projectContext);
 
             findNodeDifference += currentNodeDifference;
         }
