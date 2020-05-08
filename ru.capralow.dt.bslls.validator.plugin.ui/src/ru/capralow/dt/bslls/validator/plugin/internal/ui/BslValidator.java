@@ -26,7 +26,6 @@ import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.xtext.nodemodel.ICompositeNode;
-import org.eclipse.xtext.nodemodel.ILeafNode;
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils;
 import org.eclipse.xtext.util.CancelIndicator;
 import org.osgi.framework.Bundle;
@@ -37,7 +36,6 @@ import com._1c.g5.v8.dt.bsl.validation.CustomValidationMessageAcceptor;
 import com._1c.g5.v8.dt.bsl.validation.IExternalBslValidator;
 import com._1c.g5.v8.dt.core.platform.IV8Project;
 import com._1c.g5.v8.dt.core.platform.IV8ProjectManager;
-import com._1c.g5.v8.dt.lcore.nodemodel.util.CustomNodeModelUtils;
 import com.github._1c_syntax.bsl.languageserver.codeactions.QuickFixSupplier;
 import com.github._1c_syntax.bsl.languageserver.configuration.DiagnosticLanguage;
 import com.github._1c_syntax.bsl.languageserver.configuration.LanguageServerConfiguration;
@@ -273,17 +271,15 @@ public class BslValidator
         validateModule(object, messageAcceptor, monitor);
     }
 
-    private long registerIssue(EObject object, CustomValidationMessageAcceptor messageAcceptor, Diagnostic diagnostic,
-        ICompositeNode eObjectNode, DocumentContext documentContext, Document doc, ProjectContext projectContext)
+    private void registerIssue(EObject object, CustomValidationMessageAcceptor messageAcceptor, Diagnostic diagnostic,
+        DocumentContext documentContext, Document doc, ProjectContext projectContext)
     {
-
-        long findNodeDifference = 0;
 
         Optional<Class<? extends BSLDiagnostic>> diagnosticClass =
             projectContext.diagnosticSupplier.getDiagnosticClass(diagnostic.getCode());
 
         if (!diagnosticClass.isPresent())
-            return findNodeDifference;
+            return;
 
         Class<? extends BSLDiagnostic> bslDiagnosticClass = diagnosticClass.get();
         DiagnosticInfo diagnosticInfo = new DiagnosticInfo(bslDiagnosticClass, projectContext.diagnosticLanguage);
@@ -292,27 +288,17 @@ public class BslValidator
         Integer offset = offsetAndLength[0];
         Integer length = offsetAndLength[1];
 
-        long startTime = System.currentTimeMillis();
-        ILeafNode leafNode = CustomNodeModelUtils.findLeafNodeAtOffset(eObjectNode, offset);
-        EObject diagnosticObject = NodeModelUtils.findActualSemanticObjectFor(leafNode);
-        findNodeDifference = System.currentTimeMillis() - startTime;
-        if (diagnosticObject == null)
-            diagnosticObject = object;
-
         StringBuilder issueData = getIssueData(diagnostic, bslDiagnosticClass, documentContext, doc, projectContext);
 
         String diagnosticMessage = BSL_LS_PREFIX.concat(diagnostic.getMessage());
 
         DiagnosticType diagnosticType = diagnosticInfo.getType();
         if (diagnosticType.equals(DiagnosticType.ERROR) || diagnosticType.equals(DiagnosticType.VULNERABILITY))
-            messageAcceptor.acceptError(diagnosticMessage, diagnosticObject, offset, length, QUICKFIX_CODE,
-                issueData.toString());
+            messageAcceptor.acceptError(diagnosticMessage, object, offset, length, QUICKFIX_CODE, issueData.toString());
 
         else
-            messageAcceptor.acceptWarning(diagnosticMessage, diagnosticObject, offset, length, QUICKFIX_CODE,
+            messageAcceptor.acceptWarning(diagnosticMessage, object, offset, length, QUICKFIX_CODE,
                 issueData.toString());
-
-        return findNodeDifference;
 
     }
 
@@ -334,8 +320,6 @@ public class BslValidator
         BslValidatorPlugin.log(
             BslValidatorPlugin.createInfoStatus(BSL_LS_PREFIX.concat("Начало передачи текста модуля"))); //$NON-NLS-1$
 
-        ICompositeNode eObjectNode = NodeModelUtils.getNode(object);
-
         Module module = (Module)object;
         IFile moduleFile =
             ResourcesPlugin.getWorkspace().getRoot().getFile(new Path(EcoreUtil.getURI(module).toPlatformString(true)));
@@ -351,17 +335,14 @@ public class BslValidator
         long computeStartTime = System.currentTimeMillis();
         List<Diagnostic> diagnostics = projectContext.diagnosticProvider.computeDiagnostics(documentContext);
         long computeDifference = System.currentTimeMillis() - computeStartTime;
-        long findNodeDifference = 0;
         int findNodeAmount = diagnostics.size();
         for (Diagnostic diagnostic : diagnostics)
         {
             if (monitor.isCanceled())
                 break;
 
-            long currentNodeDifference =
-                registerIssue(object, messageAcceptor, diagnostic, eObjectNode, documentContext, doc, projectContext);
+            registerIssue(object, messageAcceptor, diagnostic, documentContext, doc, projectContext);
 
-            findNodeDifference += currentNodeDifference;
         }
 
         projectContext.diagnosticProvider.clearComputedDiagnostics(documentContext);
@@ -373,9 +354,8 @@ public class BslValidator
             BslValidatorPlugin.log(BslValidatorPlugin.createInfoStatus(
                 BSL_LS_PREFIX.concat("URI модуля длительной проверки: ").concat(moduleFile.getLocation().toString()))); //$NON-NLS-1$
 
-        String differenceText = MessageFormat.format("(всего:{0}сек,анализ:{1}сек,поиск:{2}сек/{3}проб)", //$NON-NLS-1$
-            Long.toString(difference / 1000), Long.toString(computeDifference / 1000),
-            Long.toString(findNodeDifference / 1000), String.valueOf(findNodeAmount));
+        String differenceText = MessageFormat.format("(всего:{0}сек,анализ:{1}сек/{2}проб)", //$NON-NLS-1$
+            Long.toString(difference / 1000), Long.toString(computeDifference / 1000), String.valueOf(findNodeAmount));
 
         BslValidatorPlugin.log(BslValidatorPlugin.createInfoStatus(
             BSL_LS_PREFIX.concat("Окончание передачи текста модуля ").concat(differenceText))); //$NON-NLS-1$
