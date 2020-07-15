@@ -15,7 +15,7 @@ env:
   - PLUGIN_VERSION="0.14.2"
 
 script: 
-- mvn clean test verify sonar:sonar -f build/pom.xml -s build/settings.xml -Dsonar.projectKey=$SONAR_PROJECT_KEY
+- mvn clean test verify sonar:sonar -f build/pom.xml -s build/settings.xml -Dsonar.java.source=11 -Dsonar.projectKey=$SONAR_PROJECT_KEY
 
 cache:
   directories:
