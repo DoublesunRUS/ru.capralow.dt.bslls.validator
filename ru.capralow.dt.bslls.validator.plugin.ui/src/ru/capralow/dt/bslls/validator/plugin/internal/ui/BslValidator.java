@@ -81,25 +81,23 @@ public class BslValidator
 
             bslServerContext = new ServerContext(project.getLocation().toFile().toPath());
 
-            String initializationMessage = ""; //$NON-NLS-1$
-
             ConfigurationSource configurationSource = bslServerContext.getConfiguration().getConfigurationSource();
 
+            String medatadaDesc = ""; //$NON-NLS-1$
             if (configurationSource.equals(ConfigurationSource.EDT))
-                initializationMessage = BSL_LS_PREFIX.concat("Инициализация с EDT метаданными: ") //$NON-NLS-1$
-                    .concat(project.getName());
+                medatadaDesc = "с EDT метаданными"; //$NON-NLS-1$
 
             else if (configurationSource.equals(ConfigurationSource.EMPTY))
-                initializationMessage = BSL_LS_PREFIX.concat("Инициализация БЕЗ метаданных: ") //$NON-NLS-1$
-                    .concat(project.getName());
+                medatadaDesc = "БЕЗ метаданных"; //$NON-NLS-1$
 
             else if (configurationSource.equals(ConfigurationSource.DESIGNER))
-                initializationMessage = BSL_LS_PREFIX.concat("Инициализация c метаданными КОНФИГУРАТОРА: ") //$NON-NLS-1$
-                    .concat(project.getName());
+                medatadaDesc = "c метаданными КОНФИГУРАТОРА"; //$NON-NLS-1$
 
             else
-                initializationMessage = BSL_LS_PREFIX.concat("Инициализация c НЕИЗВЕСТНЫМИ метаданными: ") //$NON-NLS-1$
-                    .concat(project.getName());
+                medatadaDesc = "c НЕИЗВЕСТНЫМИ метаданными"; //$NON-NLS-1$
+
+            String initializationMessage =
+                MessageFormat.format("{0}Инициализация {1}: {2}", BSL_LS_PREFIX, medatadaDesc, project.getName()); //$NON-NLS-1$
 
             BslValidatorPlugin.log(BslValidatorPlugin.createInfoStatus(initializationMessage));
         }
@@ -125,11 +123,16 @@ public class BslValidator
             {
                 lsConfiguration = LanguageServerConfiguration.create();
 
+                String initializationMessage =
+                    BSL_LS_PREFIX.concat(project.getName()).concat(" - БЕЗ конфигурационного файла"); //$NON-NLS-1$
+                BslValidatorPlugin.log(BslValidatorPlugin.createInfoStatus(initializationMessage));
+
             }
             else
             {
-                String initializationMessage = BSL_LS_PREFIX.concat("Конфигурационный файл: ") //$NON-NLS-1$
-                    .concat(configurationFile.getPath());
+                String initializationMessage =
+                    BSL_LS_PREFIX.concat(project.getName()).concat(" - Конфигурационный файл: ") //$NON-NLS-1$
+                        .concat(configurationFile.getPath());
                 BslValidatorPlugin.log(BslValidatorPlugin.createInfoStatus(initializationMessage));
 
                 lsConfiguration = LanguageServerConfiguration.create(configurationFile);
