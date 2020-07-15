@@ -5,7 +5,7 @@
 
 Минимальная версия EDT: 1.16.0
 
-Текущий релиз в ветке [master: 0.14.1](https://github.com/DoublesunRUS/ru.capralow.dt.bslls.validator/tree/master).<br>
+Текущий релиз в ветке [master: 0.14.2](https://github.com/DoublesunRUS/ru.capralow.dt.bslls.validator/tree/master).<br>
 Разработка ведется в ветке [dev](https://github.com/DoublesunRUS/ru.capralow.dt.bslls.validator/tree/dev).<br>
 
 В данном репозитории хранятся только исходники.<br>
@@ -22,8 +22,10 @@
 При запуске Расширенной проверки из контекстного меню проекта, в список ошибок добавляются ошибки, которые диагностирует BSL LS. При открытии ошибки открывается модуль с этой ошибкой.<br>
 При открытии любого модуля запускаются проверки модуля, которые предлагает BSL LS. После окончания проверок, список ошибок и предупреждений выводится в самом модуле.<br>
 Функция быстрого исправления для диагностик, которые её поддерживают.<br>
-Чтение конфигурационного файла в формате LS. Файл необходимо разместить по адресу:<br>
-&nbsp; &nbsp; <Рабочая область>\\.metadata\\.plugins\\ru.capralow.dt.bslls.validator.plugin.ui\\.bsl-language-server.json
+Чтение конфигурационного файла в формате LS. Файл необходимо разместить по одному из адресов:<br>
+&nbsp; &nbsp; <Репозиторий>\\<Имя проекта\\>.bsl-language-server.json<br>
+&nbsp; &nbsp; <Репозиторий>\\.bsl-language-server.json<br>
+&nbsp; &nbsp; <Рабочая область>\\.bsl-language-server.json
 
 ### Игнорируемые диагностики
 Свои механизмы в EDT:<br>

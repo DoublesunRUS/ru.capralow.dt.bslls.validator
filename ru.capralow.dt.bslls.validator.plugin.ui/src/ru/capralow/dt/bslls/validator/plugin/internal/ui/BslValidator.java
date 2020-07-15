@@ -13,7 +13,6 @@ import java.util.Optional;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.emf.ecore.EObject;
@@ -28,7 +27,6 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.xtext.nodemodel.ICompositeNode;
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils;
 import org.eclipse.xtext.util.CancelIndicator;
-import org.osgi.framework.Bundle;
 
 import com._1c.g5.v8.dt.bsl.model.Module;
 import com._1c.g5.v8.dt.bsl.resource.BslResource;
@@ -106,28 +104,37 @@ public class BslValidator
             BslValidatorPlugin.log(BslValidatorPlugin.createInfoStatus(initializationMessage));
         }
 
-        private IPath getConfigurationFilePath()
-        {
-            Bundle bundle = Platform.getBundle(BslValidatorPlugin.ID);
-            return Platform.getStateLocation(bundle);
-        }
-
         private LanguageServerConfiguration initializeLsConfiguration(IProject project)
         {
-            File configurationFile;
+            File configurationFile = null;
+            LanguageServerConfiguration lsConfiguration;
 
-            configurationFile = new File(project.getLocation().toFile().getParent() + File.separator + BSL_LS_FILENAME);
-            if (!configurationFile.exists())
-                configurationFile = new File(getConfigurationFilePath() + File.separator + BSL_LS_FILENAME);
+            Collection<String> configurationFilePathes = new ArrayList<>();
+            configurationFilePathes.add(project.getLocation() + File.separator + BSL_LS_FILENAME);
+            configurationFilePathes.add(project.getLocation().toFile().getParent() + File.separator + BSL_LS_FILENAME);
+            configurationFilePathes.add(Platform.getLocation() + File.separator + BSL_LS_FILENAME);
 
-            if (configurationFile.exists())
+            for (String configurationFilePath : configurationFilePathes)
+            {
+                configurationFile = new File(configurationFilePath);
+                if (configurationFile.exists())
+                    break;
+            }
+
+            if (configurationFile == null || !configurationFile.exists())
+            {
+                lsConfiguration = LanguageServerConfiguration.create();
+
+            }
+            else
             {
                 String initializationMessage = BSL_LS_PREFIX.concat("Конфигурационный файл: ") //$NON-NLS-1$
                     .concat(configurationFile.getPath());
                 BslValidatorPlugin.log(BslValidatorPlugin.createInfoStatus(initializationMessage));
-            }
 
-            LanguageServerConfiguration lsConfiguration = LanguageServerConfiguration.create(configurationFile);
+                lsConfiguration = LanguageServerConfiguration.create(configurationFile);
+
+            }
 
             Map<String, Either<Boolean, Map<String, Object>>> diagnostics = lsConfiguration.getDiagnostics();
             if (diagnostics == null)
