@@ -51,6 +51,7 @@
     </extension>
     <languageCode>ru</languageCode>
   </languages>
-  <commonModules>CommonModule.BSLLS_Диагностики</commonModules>
-  <catalogs>Catalog.МойСправочник</catalogs>
+  <commonModules>CommonModule.BSLLS_ДиагностикиКлиентСервер</commonModules>
+  <commonModules>CommonModule.BSLLS_ДиагностикиПовтИсп</commonModules>
+  <catalogs>Catalog.Диагностики</catalogs>
 </mdclass:Configuration>

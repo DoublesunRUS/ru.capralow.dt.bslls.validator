@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
 	<feature
-		url="features/ru.capralow.dt.bslls.validator_0.14.2.qualifier.jar"
-		id="ru.capralow.dt.bslls.validator" version="0.14.2.qualifier">
+		url="features/ru.capralow.dt.bslls.validator_0.15.0.qualifier.jar"
+		id="ru.capralow.dt.bslls.validator" version="0.15.0.qualifier">
 		<category name="ru.capralow.dt.plugin.category.public" />
 	</feature>
 	<category-def name="ru.capralow.dt.plugin.category.public"

@@ -35,20 +35,26 @@ import com._1c.g5.v8.dt.bsl.validation.IExternalBslValidator;
 import com._1c.g5.v8.dt.core.platform.IV8Project;
 import com._1c.g5.v8.dt.core.platform.IV8ProjectManager;
 import com.github._1c_syntax.bsl.languageserver.codeactions.QuickFixSupplier;
-import com.github._1c_syntax.bsl.languageserver.configuration.DiagnosticLanguage;
+import com.github._1c_syntax.bsl.languageserver.configuration.Language;
 import com.github._1c_syntax.bsl.languageserver.configuration.LanguageServerConfiguration;
+import com.github._1c_syntax.bsl.languageserver.configuration.diagnostics.DiagnosticsOptions;
 import com.github._1c_syntax.bsl.languageserver.context.DocumentContext;
 import com.github._1c_syntax.bsl.languageserver.context.ServerContext;
 import com.github._1c_syntax.bsl.languageserver.diagnostics.BSLDiagnostic;
 import com.github._1c_syntax.bsl.languageserver.diagnostics.CodeBlockBeforeSubDiagnostic;
+import com.github._1c_syntax.bsl.languageserver.diagnostics.CommonModuleAssignDiagnostic;
+import com.github._1c_syntax.bsl.languageserver.diagnostics.DeprecatedMethodCallDiagnostic;
 import com.github._1c_syntax.bsl.languageserver.diagnostics.DiagnosticSupplier;
 import com.github._1c_syntax.bsl.languageserver.diagnostics.FunctionShouldHaveReturnDiagnostic;
 import com.github._1c_syntax.bsl.languageserver.diagnostics.LineLengthDiagnostic;
 import com.github._1c_syntax.bsl.languageserver.diagnostics.ParseErrorDiagnostic;
 import com.github._1c_syntax.bsl.languageserver.diagnostics.ProcedureReturnsValueDiagnostic;
 import com.github._1c_syntax.bsl.languageserver.diagnostics.QuickFixProvider;
+import com.github._1c_syntax.bsl.languageserver.diagnostics.ThisObjectAssignDiagnostic;
+import com.github._1c_syntax.bsl.languageserver.diagnostics.TypoDiagnostic;
 import com.github._1c_syntax.bsl.languageserver.diagnostics.UnknownPreprocessorSymbolDiagnostic;
 import com.github._1c_syntax.bsl.languageserver.diagnostics.UnreachableCodeDiagnostic;
+import com.github._1c_syntax.bsl.languageserver.diagnostics.UnusedLocalMethodDiagnostic;
 import com.github._1c_syntax.bsl.languageserver.diagnostics.UsingServiceTagDiagnostic;
 import com.github._1c_syntax.bsl.languageserver.diagnostics.metadata.DiagnosticInfo;
 import com.github._1c_syntax.bsl.languageserver.diagnostics.metadata.DiagnosticType;
@@ -66,7 +72,7 @@ public class BslValidator
 
         private DiagnosticSupplier diagnosticSupplier;
         private DiagnosticProvider diagnosticProvider;
-        private DiagnosticLanguage diagnosticLanguage;
+        private Language diagnosticLanguage;
         private QuickFixSupplier quickFixSuplier;
         private ServerContext bslServerContext;
 
@@ -74,7 +80,7 @@ public class BslValidator
         {
             LanguageServerConfiguration lsConfiguration = initializeLsConfiguration(project);
 
-            diagnosticLanguage = lsConfiguration.getDiagnosticLanguage();
+            diagnosticLanguage = lsConfiguration.getLanguage();
             diagnosticSupplier = new DiagnosticSupplier(lsConfiguration);
             diagnosticProvider = new DiagnosticProvider(diagnosticSupplier);
             quickFixSuplier = new QuickFixSupplier(diagnosticSupplier);
@@ -139,7 +145,9 @@ public class BslValidator
 
             }
 
-            Map<String, Either<Boolean, Map<String, Object>>> diagnostics = lsConfiguration.getDiagnostics();
+            DiagnosticsOptions diagnosticOptions = lsConfiguration.getDiagnosticsOptions();
+
+            Map<String, Either<Boolean, Map<String, Object>>> diagnostics = diagnosticOptions.getParameters();
             if (diagnostics == null)
                 diagnostics = new HashMap<>();
 
@@ -148,25 +156,30 @@ public class BslValidator
             // Свои механизмы в EDT
             duplicateDiagnostics.add(LineLengthDiagnostic.class);
             duplicateDiagnostics.add(ParseErrorDiagnostic.class);
+            duplicateDiagnostics.add(TypoDiagnostic.class);
             duplicateDiagnostics.add(UsingServiceTagDiagnostic.class);
 
             // Диагностики есть в EDT
             duplicateDiagnostics.add(CodeBlockBeforeSubDiagnostic.class);
+            duplicateDiagnostics.add(CommonModuleAssignDiagnostic.class);
+            duplicateDiagnostics.add(DeprecatedMethodCallDiagnostic.class);
             duplicateDiagnostics.add(FunctionShouldHaveReturnDiagnostic.class);
             duplicateDiagnostics.add(ProcedureReturnsValueDiagnostic.class);
+            duplicateDiagnostics.add(ThisObjectAssignDiagnostic.class);
             duplicateDiagnostics.add(UnknownPreprocessorSymbolDiagnostic.class);
             duplicateDiagnostics.add(UnreachableCodeDiagnostic.class);
+            duplicateDiagnostics.add(UnusedLocalMethodDiagnostic.class);
 
             // В настройках можно принудительно включить выключенные диагностики
             for (Class<? extends BSLDiagnostic> diagnostic : duplicateDiagnostics)
             {
-                DiagnosticInfo diagnosticInfo = new DiagnosticInfo(diagnostic, lsConfiguration.getDiagnosticLanguage());
+                DiagnosticInfo diagnosticInfo = new DiagnosticInfo(diagnostic, lsConfiguration.getLanguage());
                 String diagnocticCode = diagnosticInfo.getCode().getStringValue();
                 if (!diagnostics.containsKey(diagnocticCode))
                     diagnostics.put(diagnocticCode, falseForLeft);
             }
 
-            lsConfiguration.setDiagnostics(diagnostics);
+            diagnosticOptions.setParameters(diagnostics);
 
             return lsConfiguration;
         }

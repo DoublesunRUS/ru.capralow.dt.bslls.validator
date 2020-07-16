@@ -5,7 +5,7 @@
 
 Минимальная версия EDT: 1.16.0
 
-Текущий релиз в ветке [master: 0.14.2](https://github.com/DoublesunRUS/ru.capralow.dt.bslls.validator/tree/master).<br>
+Текущий релиз в ветке [master: 0.15.0](https://github.com/DoublesunRUS/ru.capralow.dt.bslls.validator/tree/master).<br>
 Разработка ведется в ветке [dev](https://github.com/DoublesunRUS/ru.capralow.dt.bslls.validator/tree/dev).<br>
 
 В данном репозитории хранятся только исходники.<br>
@@ -15,7 +15,7 @@
 
 ### BSL Language Server
 Плагин использует [BSL Language Server](https://github.com/1c-syntax/bsl-language-server) в соответствии с [лицензией](https://github.com/1c-syntax/bsl-language-server/blob/develop/COPYING.md).<br>
-В состав плагина включена версия 0.14.1<br>
+В состав плагина включена версия 0.15.2<br>
 Список диагностик можно посмотреть на [официальном сайте](https://1c-syntax.github.io/bsl-language-server/diagnostics) сервера.
 
 ### Возможности
@@ -31,14 +31,19 @@
 Свои механизмы в EDT:<br>
 * LineLength
 * ParseError
+* Typo
 * UsingServiceTag
 
 Диагностики есть в EDT:
 * CodeBlockBeforeSub
+* CommonModuleAssign
+* DeprecatedMethodCall
 * FunctionShouldHaveReturn
 * ProcedureReturnsValue
+* ThisObjectAssign
 * UnknownPreprocessorSymbol
 * UnreachableCode
+* UnusedLocalMethod
 
 ### Демонстрация
 Расширение, в котором можно посмотреть работу всех диагностик можно скачать [здесь](https://github.com/DoublesunRUS/ru.capralow.dt.bslls.validator/tree/master/BSLLanguageServer)<br>
