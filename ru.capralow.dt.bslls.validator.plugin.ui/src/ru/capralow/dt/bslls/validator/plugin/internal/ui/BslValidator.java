@@ -86,6 +86,7 @@ public class BslValidator
             quickFixSuplier = new QuickFixSupplier(diagnosticSupplier);
 
             bslServerContext = new ServerContext(project.getLocation().toFile().toPath());
+            bslServerContext.populateContext();
 
             ConfigurationSource configurationSource = bslServerContext.getConfiguration().getConfigurationSource();
 
